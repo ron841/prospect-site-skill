@@ -892,7 +892,22 @@ Phase 1 attempts logo capture in tiers, stopping at the first tier that succeeds
 
 **Why Stage 1 exists:** performance and correctness. Most real photos and multi-color logos have per-channel deltas well above 5 across a 3x3 grid. Running edge detection on every candidate would waste time and risk false positives on heavily compressed JPEGs where block artifacts push edge density above the threshold even on photos. Stage 1 is a fast, reliable shortcut for the common case.
 
-**After the content-aware check accepts,** save the image as `assets/logo-original.[ext]` preserving the original format (SVG, PNG, JPG, WebP). If the file is SVG, also generate a PNG copy via sharp at `assets/logo.png` for node-vibrant analysis.
+**After the content-aware check accepts,** run the **crop-to-bounds post-processor (v0.7.3 Rule 3)** before saving. Logo assets often come with heavy background padding (T&F's `emotionheader.png` is 940x405 with the logo occupying ~60% of the canvas on a red field with black outer bars). Rendering an unpadded image at 44px nav height means the visible logo inside is only ~26px. The crop removes the padding so the logo fills its rendered space.
+
+**Crop-to-bounds algorithm (Pillow only):**
+
+1. Load the accepted image in RGB mode.
+2. **Identify background color.** Sample the 4 corner pixels: (0,0), (w-1,0), (0,h-1), (w-1,h-1). Compute the per-channel range across all 4. If all 4 are within 10 units per channel, compute the per-channel average as the background color. If the 4 corners disagree (range >10), check for paired corners: do the left pair (TL, BL) match within 10 AND the right pair (TR, BR) match within 10? Or do the top pair (TL, TR) and bottom pair (BL, BR) match? If a paired match is found, use the darkest pair's average as the background color (outer padding is typically darker than inner content). If no uniform or paired match is found, **skip Rule 3 entirely, use the image as-is.**
+3. **Build content mask.** For each pixel, mark as "content" if ANY channel differs from the background by more than 20 units. Mark as "background" otherwise.
+4. **Find bounding box.** Scan the mask for the minimum and maximum x and y where content pixels exist. This is the tight bounding box around non-background content.
+5. **Edge case: tiny bounding box.** If the bounding box area is less than 10% of the total image area, content detection likely failed (e.g., compression artifacts triggered a few scattered pixels). **Use the original image unchanged**, log warning `"crop-to-bounds: bounding box too small (<10% of image), skipping crop"`.
+6. **Edge case: full-image bounding box.** If the bounding box equals the full image dimensions, no padding exists. **Use the original image unchanged**, no log needed.
+7. **Add padding margin.** Compute 5% of the shorter bounding-box dimension. Add that margin on all four sides of the bounding box. Clip to image bounds (no negative coordinates, no exceeding image width/height).
+8. **Crop and save.** Crop the original image to the padded bounding box. Log `"crop-to-bounds: [original_w]x[original_h] -> [new_w]x[new_h]"`.
+
+**Two-color background handling.** When the image has an outer color (e.g., black bars) and an inner color (e.g., red field with logo), step 2 samples the corners which are the outer color. Step 3 treats the inner color as "content" alongside the logo itself. Step 4 draws the bounding box around both the inner field and the logo, which is the desired result: the black outer padding is removed, the red inner box with logo is preserved.
+
+Save the cropped image as `assets/logo-original.[ext]` preserving the original format (SVG, PNG, JPG, WebP). If the file is SVG, also generate a PNG copy via sharp at `assets/logo.png` for node-vibrant analysis.
 
 ### Tier 2 (fallback): Open Graph image, apple-touch-icon, or favicon
 
