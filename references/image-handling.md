@@ -919,9 +919,62 @@ If Tier 1 finds nothing, check the `<head>` for:
 
 If any of these three resolve to an image at least 128×128 on the long edge, save it as `assets/logo-original.[ext]` and proceed. If the candidate is smaller than 128×128, discard it and fall through to Tier 3.
 
+### Photo signage fallback (v0.7.3 Rule 4)
+
+Both Tier 1 and Tier 2 failed to produce a logo asset. Before falling to Tier 3's type-based wordmark, the skill scans the top Google Places photos for visible signage (vehicle decals, storefront signs, building signage) and offers a detected crop to Ron for confirmation.
+
+**This is not automatic extraction.** Signage detection is heuristic and will produce false positives. Every detected crop is presented to Ron with an explicit accept/reject prompt. The skill never auto-accepts a signage crop as a logo.
+
+**Trigger:** Tier 1 produced no logo AND Tier 2 produced no logo. Rule 4 fires before Tier 3. If Rule 4 also fails (no signage detected, or Ron rejects all candidates), fall through to Tier 3.
+
+**Phase 1.5: early Google Places photo fetch.** Phase 1 runs before Phase 3's full photo capture pipeline. To access Google Places photos this early, Rule 4 triggers a lightweight sub-step:
+
+1. Call the Google Places API with the prospect's `place_id` (from Phase 1 step 3) requesting only the `photos` field.
+2. Download the top 3 photos by reported resolution, preferring landscape orientation. Save to `~/grm-sites-prospects/[slug]/raw-photos/google-preview/`.
+3. These preview photos are NOT the final Phase 3 photo library. Phase 3 re-downloads all photos at full resolution with proper attribution tracking. The Phase 1.5 cache exists solely for logo signage detection and is not referenced by Phase 5 site generation.
+
+If the Google Places API key is missing or the call fails, skip Rule 4 silently and fall to Tier 3.
+
+**Signage detection algorithm (Pillow only):**
+
+For each of the 3 preview photos:
+
+1. Convert to grayscale, resize to 500px on the long edge (for speed).
+2. Divide into a 10x10 grid of cells (each cell is approximately 50x50 pixels for a landscape photo, or similar proportions for portrait).
+3. For each cell, run Pillow `ImageFilter.FIND_EDGES` and compute edge density (pixels with value >20 / total pixels in cell, excluding 1px border per Rule 2's border-crop fix).
+4. Find rectangular groups of adjacent cells where ALL cells in the group have edge density > 0.03. A group must be at least 3 cells wide and 1 cell tall (the 3-cell minimum reduces false positives from isolated edge clusters like fence lines and shadow boundaries).
+5. For each group, compute the aspect ratio (width in cells / height in cells). Flag the group as potential signage if aspect ratio is between 1.5:1 and 4:1 (typical sign proportions: wider than tall, but not extremely elongated).
+6. If any group is flagged, crop the corresponding region from the original full-resolution photo (not the resized copy). Add 10% margin on each side, clipped to image bounds. Save the crop to `~/grm-sites-prospects/[slug]/logo-candidates/photo-[N]-signage-crop.png`.
+
+**Ron confirmation prompt (interactive, never auto-accepted):**
+
+If one or more photos have flagged signage regions, present the prompt:
+
+```
+No logo asset found on the prospect's website. I detected possible
+signage in [N] of the top 3 Google Places photos. Preview crops saved to:
+
+  ~/grm-sites-prospects/[slug]/logo-candidates/
+    photo-1-signage-crop.png
+    photo-2-signage-crop.png
+
+Options:
+(a) Use photo-1 signage as logo source
+(b) Use photo-2 signage as logo source
+(c) Skip, use type-based wordmark (Tier 3)
+
+Reply with a, b, or c.
+```
+
+On (a) or (b): save the selected crop as `assets/logo-original.png`, run Rule 3 crop-to-bounds on it, save final as `assets/logo.png`, log `"logo source: Google Places photo signage (photo-[N])"`. Continue Phase 1.
+
+On (c) or if no signage was detected: fall through to Tier 3 silently.
+
+**Why this must be interactive.** Signage detection via edge density is a coarse heuristic. A brick wall, a fence line, or a shadow edge can trigger the same density pattern as a vehicle decal. Ron's eye is the only reliable filter. The prompt is cheap (takes 5 seconds to review a crop) and the downside of auto-accepting a false positive (a brick-pattern "logo" on a generated site) is severe.
+
 ### Tier 3 (last resort): Type-based wordmark
 
-Both Tier 1 and Tier 2 failed. The prospect has no usable logo asset. Phase 5 renders a type-based wordmark in place of an image logo, using:
+Both Tier 1, Tier 2, and Rule 4's photo signage fallback all failed to produce a logo asset. The prospect has no usable logo. Phase 5 renders a type-based wordmark in place of an image logo, using:
 
 - The captured `brandPalette.primary` as the mark color
 - The tier-appropriate heading font from `css-framework.md` CONFIG
