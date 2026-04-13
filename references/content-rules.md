@@ -4,7 +4,7 @@ Part of the prospect-site skill v0.7. Loaded by Phase 5 when the skill begins ge
 
 ## Critical distinction before you read any further
 
-The em-dash ban and the strict GRM voice rules apply ONLY to template strings and example outputs that end up as customer-facing copy on a generated site. Meta-commentary throughout this file (explanations, rationales, "when to use this" notes) can use em dashes freely because it is GRM internal documentation, not customer output. If a rule appears inside a code block or in quotation marks as an example output, it follows GRM voice rules. Everything else is internal and can use normal writing conventions.
+The em-dash ban and the strict Plant Street voice rules apply ONLY to template strings and example outputs that end up as customer-facing copy on a generated site. Meta-commentary throughout this file (explanations, rationales, "when to use this" notes) can use em dashes freely because it is GRM internal documentation, not customer output. If a rule appears inside a code block or in quotation marks as an example output, it follows GRM voice rules. Everything else is internal and can use normal writing conventions.
 
 ---
 
@@ -42,7 +42,6 @@ Phase 5 assigns voices by section according to this table. Every line of generat
 
 | Section | Voice | Why |
 |---|---|---|
-| Nav labels and click-to-call button | **Closing Table** | Short punchy microcopy, action-oriented. "Call 352-xxx-xxxx" is Closing Table by definition: real number, real action, zero filler. |
 | Hero headline + subheadline | **Closing Table** | Data-forward, sharp, short punchy paragraphs. Matches the "real number, real fact, real action" headline patterns. |
 | Promo bar (if rendered) | **Closing Table** | Contrarian data point, specific pricing, clean close. |
 | Trust marquee labels | **Saturday Morning** | Clean, informational, forward-moving. Credential statements are short and factual. |
@@ -54,11 +53,8 @@ Phase 5 assigns voices by section according to this table. Every line of generat
 | Featured promotion callout | **Closing Table** | Contrarian insight ("do not be a victim") plus pricing plus specific action. |
 | FAQ questions and answers | **Closing Table** | Warm precision. Real answer instead of polite answer. Exactly what a homeowner wants from a contractor FAQ. |
 | Contact form headline + subhead | **Saturday Morning** | Upbeat informational. Lead with what happens when they submit. |
-| Mobile bottom CTA bar (sticky) | **Closing Table** | Same rationale as nav. Short, punchy, action-oriented microcopy. Call button label must match the nav call button label exactly. |
 | Footer tagline | **Front Porch** | Warm, people-first, identity grounding. Creates a moment of warmth at the end of the page and echoes the About page voice. |
-| Footer body content (column headers, address, copyright) | **Saturday Morning** | Clean informational microcopy. Factual wrapper around the Front Porch tagline. Column headers are 1-2 words each; address is formatted for scanning; copyright is a single line. Do not let the Front Porch tagline bleed into the body content. |
 | About page (full long-form) | **Front Porch** | Scene-driven, people-first, specific concrete nouns. The voice skill's sample output is under 200 words and works at that length for owner stories. |
-| thanks.html confirmation page | **Saturday Morning** | Upbeat informational. Confirms the submission, states what happens next ("we call back within one business hour"), echoes the contact form voice so the handoff between pages feels continuous. |
 
 ### Voices NOT used in v0.7
 

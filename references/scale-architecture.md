@@ -35,7 +35,7 @@ v0.7 is deliberately small in scope. The deliberate smallness is the feature, no
 - Produces fact-dense, voice-disciplined, schema-rich output engineered for AI citation
 - Deploys to a Vercel preview URL that Ron can send to the prospect as a sales weapon
 - Supports one prospect at a time, manually triggered
-- Runs through 12 phases (0 through 8, plus intermediate quality gates at 2.5, 3.5, and 5.5) with hard gates at Phase 3.5, Phase 4 (approval), Phase 6 (verification), and Phase 7 (deployment)
+- Runs through 8 phases with hard gates at Phase 3.5, Phase 4 (approval), Phase 6 (verification), and Phase 7 (deployment)
 - Enforces anti-slop rules across typography, color, layout, copy, photography, and interaction patterns
 
 ### What v0.7 explicitly does NOT do

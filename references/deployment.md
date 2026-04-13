@@ -309,7 +309,7 @@ Per the Cowork research, Static Forms was chosen over Formspree (50/month), Web3
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Thanks for reaching out, [Business Name]</title>
+  <title>Thanks for reaching out — [Business Name]</title>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>

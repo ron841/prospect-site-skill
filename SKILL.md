@@ -3,7 +3,7 @@ name: prospect-site
 description: "Generate a custom multi-page preview website for a local home services contractor prospect from their live URL. Deeply crawls the prospect's real site, captures their brand data (owners, services, testimonials, credentials, colors, photos, promotions), scores their current web presence, picks a hero background mode from a data-driven decision tree, builds a multi-page site using the GRM house style and the GRM voice mapping (Closing Table for hero/promos/cards/stats, Saturday Morning for marquees/section headers, Front Porch for footer/About), runs automated quality gates, and deploys to Vercel. Use this skill whenever the user types /prospect-site followed by a business name and URL, or asks to build a prospect preview site for a local business they want to sell to."
 ---
 
-# Prospect Site Generator (v0.7.2)
+# Prospect Site Generator (v0.7)
 
 ## What this skill does
 
@@ -176,11 +176,11 @@ Steps:
 
 3. Parse the homepage and extract: business name, tagline, phone number (note if tel:-linked), email, address, hours including emergency availability, primary logo URL, CSS color tokens from linked stylesheets, font families, hero image URL if any, list of internal navigation links (this becomes the Phase 2 crawl list), all inline image URLs with alt text, social media links, footer credentials.
 
-4. Download the logo file to `assets/logo-original.[ext]` following the **tiered logo capture rule** in `references/image-handling.md` under "LOGO CAPTURE — TIERED WITH SOFT-WARNING FALLBACK" (added v0.7.2, domain filter added v0.7.3 Rule 1). Every candidate image URL in Tier 1 and Tier 2 must pass the **domain filter** before logo heuristic evaluation: (a) reject if the hostname matches the CMS-platform CDN blocklist (IONOS, Wix, Squarespace, Weebly, GoDaddy, Jimdo, Shopify), logging `"rejected: platform CDN"`, (b) accept if the candidate's registrable domain matches the prospect's registrable domain, (c) reject unknown third-party domains by default. Full algorithm and blocklist in `references/image-handling.md` Tier 1 section. After the domain filter, Tier 1 applies the five logo heuristics (alt text, filename, class/id, parent element). Any candidate matching a heuristic is then downloaded and run through the **content-aware solid-color check** (v0.7.3 Rule 2): Stage 1 samples 9 pixels in a 3x3 grid, accepts immediately if per-channel range > 5. Stage 2 (only when Stage 1 says uniform) runs Pillow FIND_EDGES and accepts if edge density > 0.005 (0.5%), rejects with `"solid fill, no content"` otherwise. Full two-stage algorithm in `references/image-handling.md` Tier 1 section. After Rule 2 accepts, the **crop-to-bounds post-processor** (v0.7.3 Rule 3) removes background padding: samples 4 corner pixels to identify background color (skip if corners disagree by >10 per channel), builds a content mask (pixel differs from bg by >20 per channel), finds the bounding box, adds 5% margin, and crops. Handles two-color backgrounds (black outer + red inner = crops to inner). Skips if bounding box <10% of image area. Full algorithm in `references/image-handling.md`. Tier 2: OG image, apple-touch-icon, or favicon ≥128×128 (also domain-filtered). **Photo signage fallback** (v0.7.3 Rule 4): if Tiers 1 and 2 both fail, triggers Phase 1.5 (early Google Places photo fetch of top 3 photos to `raw-photos/google-preview/`), runs signage detection (10x10 grid edge-density sampling, flags rectangular regions with density >0.03 and aspect ratio 1.5:1 to 4:1), presents detected crops to Ron via interactive prompt (never auto-accepts), and saves the selected crop as logo if Ron approves. Full algorithm in `references/image-handling.md` "Photo signage fallback" section. Tier 3: type-based wordmark in captured brand font and primary color (soft warning, never fails the build). If a raster logo is obtained, also save a PNG copy at `assets/logo.png` for node-vibrant analysis.
+4. Download the logo file to `assets/logo.[ext]`. If the logo is SVG, use sharp to convert a PNG copy at `assets/logo.png` for node-vibrant analysis.
 
 5. Run node-vibrant on `assets/logo.png`. Capture the six semantic swatches (Vibrant, DarkVibrant, LightVibrant, Muted, DarkMuted, LightMuted). Save to `profile-draft.json` under `brandPalette` with role mapping: Vibrant becomes `primary`, DarkVibrant becomes `darkPrimary`, LightVibrant becomes `accent`, Muted becomes `neutral`, LightMuted becomes `background`.
 
-6. Set `designChoices.heroBackground` from the warm/cool temperature of `brandPalette.primary`. Convert `primary` to HSL. Warm = hue 0-60° or 300-360° (reds, oranges, yellows, magentas). Cool = hue 180-270° (cyans, blues, purples). Neutral = hue 60-180° (greens, yellow-greens) OR saturation below 0.2 regardless of hue. Warm brands get cream (`#faf7f2`). Cool brands get cool-white (`#f4f7fa`). Neutral brands default to cream.
+6. Set `designChoices.heroBackground` from the warm/cool temperature of `brandPalette.primary`. Warm brands get cream (`#faf7f2`). Cool brands get cool-white (`#f4f7fa`). Neutral brands default to cream.
 
 7. Report to Ron: what was captured, any obvious gaps, and the brandPalette preview.
 
@@ -205,9 +205,7 @@ Steps:
 
 4. Save extracted data to `profile-draft.json` as you go.
 
-5. **Brand capture cross-reference (v0.7.2):** logo acquisition followed the tiered rule in Phase 1 step 4. If Phase 1 could not obtain a logo via Tier 1 or Tier 2, the build enters Tier 3 type-based wordmark mode and the Phase 6 soft warning channel is armed. See `references/image-handling.md` "LOGO CAPTURE — TIERED WITH SOFT-WARNING FALLBACK" for the full specification. Do not attempt logo re-capture in Phase 2 — brand assets are finalized in Phase 1.
-
-6. Report to Ron: pages crawled, services captured, testimonials captured (with name list), owner names, featured promotion, any gaps.
+5. Report to Ron: pages crawled, services captured, testimonials captured (with name list), owner names, featured promotion, any gaps.
 
 ## Phase 2.5 — Pre-migration SEO audit
 
@@ -285,65 +283,13 @@ Goal: score the prospect's current web presence, select the hero mode from a det
 
 ### Scoring rubric
 
-Score across five categories, each worth 20 points, total out of 100. Each category is banded into four 5-point ranges with concrete decision criteria. The rubric is designed so two independent Phase 4 runs on the same `profile.json` produce scores within ±2 points per category. If a prospect matches criteria from two adjacent bands, take the lower band (conservative — better to under-credit and have Ron override at the approval gate than to over-credit and ship a Premium treatment on a Professional-quality input).
+Score across five categories, each worth 20 points, total out of 100:
 
-Each category uses the captured Phase 1 and Phase 2 data as its input source. If a signal required for a band is genuinely uncheckable (e.g., the prospect's site was unreachable mid-crawl and specific pages are missing), note the category as "ambiguous" in the approval gate breakdown line so Ron can see which scores are soft.
-
-#### Copy Language (0-20)
-
-Evaluates the headlines, body paragraphs, service descriptions, and CTAs captured in Phase 2. Source: concatenation of all text content from `raw/*.html`.
-
-- **0-5: Generic filler throughout.** Multiple banned phrases per page ("your trusted partner", "committed to excellence", "passionate about serving"). Headlines are trade-category fill-ins ("Your Local Electrician", "Quality Plumbing You Can Trust"). Grammar errors, typos, or inconsistent tense. Zero specific numbers, zero real place names, zero owner references. Copy could apply to any business in the category without modification.
-- **6-10: Mostly generic with occasional specifics.** 1-2 concrete facts buried in otherwise generic copy (a year, a city, a service list). One filler phrase per page on average. Headlines are trade-appropriate but not distinctive. Grammar is mostly clean with 0-2 minor issues. Reader can tell what the business does but not what makes it specific.
-- **11-15: Mostly specific with occasional filler.** Majority of copy contains real nouns (real cities, real services, real years). Zero to one filler phrase across the whole site. Headlines reference at least one real fact (years, owners, or service area) but without a distinctive pattern like Pattern A/B/C/D/E. Clean grammar. Reader gets identity, not just category.
-- **16-20: Fully specific and pattern-distinctive.** Every headline and paragraph contains real numbers, real names, or real places. Zero filler phrases. At least one headline matches one of the five Closing Table patterns (e.g., "Fifty years. Two Tuccis. One phone number."). Clean grammar throughout. Reader gets a distinct identity the first time they see the page.
-
-#### Visual Quality (0-20)
-
-Evaluates photography, color palette, and logo asset quality from Phase 1 capture and Phase 3 photo collection. Source: `assets/logo.*`, `assets/photos/site/*`, raw HTML image inventory.
-
-- **0-5: Stock imagery and generic palette.** 0-1 real project photos on the existing site. Photos visible are stock, or pixelated, or low-resolution (long edge under 800px), or watermarked. Palette is a safe default (navy+white, green+white, red+white) with no evidence of intentional selection. Logo is rendered as plain text, or as a pixelated raster, or is missing entirely. Layout visible in raw HTML reads as a pre-2015 template.
-- **6-10: Mix of real and stock; unclear palette intent.** 2-4 real project photos, rest stock or reused. Photos have compression artifacts, watermarks, or inconsistent orientation (mix of portrait and landscape without intent). Palette has two or three colors but one or more is a safe default. Logo is clean but undistinguished — a simple wordmark, or a generic icon + text combo.
-- **11-15: Mostly real photography, intentional palette.** 5+ real project photos, majority landscape, majority 1200px+ on long edge. Palette is derived from a real brand color (logo, truck wrap, uniform) with a clear primary + accent relationship. Logo is a clean vector or high-resolution raster that renders well at multiple sizes. Few or no stock photos mixed in.
-- **16-20: Professional-grade photography and palette.** 8+ real project photos, all landscape-dominant, all 1600px+ on long edge, all unwatermarked, all well-lit. Palette is clearly derived from the logo with a distinctive primary, distinctive accent, and considered neutral. Logo is a polished vector asset with consistent rendering across the site. Visual consistency across pages (same palette, same photo treatment, same type rhythm).
-
-#### Business Maturity (0-20)
-
-Evaluates the four trust signals most predictive of a contractor's business durability: review count, years in business, team identity, and credentials. Source: Phase 2 about page, testimonials page, Google Places API data from Phase 3, footer credentials. Scoring is signal-count based — count how many of the four signals are present with specific data, not vibes.
-
-- **0-5: Zero signals present.** No review count visible anywhere. No founding year or years-in-business claim. No named owners, no team bios, no "meet the team" page. No license number, no certifications, no trade association memberships. Phone number present but no other trust signals.
-- **6-10: One signal present with specifics.** Exactly one of: (a) review count with a specific number and star rating, (b) a specific founding year or years-in-business claim, (c) a named owner or owners with roles, (d) a cited license number or named certification. The other three signals are absent or vague ("family owned" with no names; "years of experience" with no count).
-- **11-15: Two or three signals present with specifics.** Any two or three of the four signals are present with specific data. Example combinations: reviews + years, reviews + license, years + named owners, license + named owners.
-- **16-20: All four signals present with specifics.** Review count with specific rating (e.g., "41 Google reviews at 4.6 stars"), specific founding year or years-in-business count, at least one named owner with a role, at least one license number or specific certification. This is the T&F Electric level.
-
-#### Site Sophistication (0-20)
-
-Evaluates the existing site as a technical and visual artifact, independent of content. Source: direct observation of the rendered site during Phase 1, raw HTML inspection, loading time sampling. A fast crude LCP estimate can come from a single `curl -w "%{time_total}"` call to the homepage as a proxy when a full Lighthouse run is not practical during Phase 4.
-
-- **0-5: Pre-2015 artifact.** Not mobile-responsive, or mobile layout is broken. LCP over 5 seconds (or homepage weight over 5MB). Layout reads as a pre-2015 template (visible table-based structure, auto-playing slideshow, hit counter, Flash vestiges, visible "Best viewed in Internet Explorer" sentiments). Broken links to internal pages. HTTP rather than HTTPS.
-- **6-10: 2015-2020 template.** Mobile-responsive but awkward — zoom-to-read required, horizontal scroll on at least one section, or navigation collapses poorly. LCP 3-5 seconds. Layout reads as early Bootstrap, early Squarespace, early Wix, or a pre-2020 WordPress theme. Plugin cruft visible in the footer or the DOM. Works but feels dated.
-- **11-15: Current-modern generic.** Clean mobile experience. LCP under 3 seconds. Layout is post-2020 modern but generic — reads as any current Squarespace, Wix, or modern WordPress theme without custom touches. Works well, feels ordinary. HTTPS with valid certificate.
-- **16-20: Custom-feeling and fast.** Excellent mobile experience with no layout shifts. LCP under 2 seconds. Layout is custom or custom-feeling, with intentional typography, spacing, and rhythm. Feels designed, not assembled from parts. HTTPS, fast, polished interactions, no plugin cruft visible. This is the score that says "we are genuinely hard to beat on technical quality alone" — most prospects will never reach here.
-
-#### Brand Intentionality (0-20)
-
-Evaluates consistency of logo, palette, and voice across the site. Source: comparison of logo rendering across pages, palette use across pages, voice consistency across pages. Phase 2 multi-page capture is the input — this category cannot be scored from the homepage alone.
-
-- **0-5: No consistency.** Logo varies across pages (different versions, different colors, sometimes rendered as plain text). No defined palette — colors drift page to page. Voice is inconsistent; body copy sounds like it was written by three different people at three different times, or pasted from different sources. Footer copyright year is stale by 3+ years (e.g., "© 2021" in 2026 — the owner-attention signal documented in Ron's prospect selection rules).
-- **6-10: Partial consistency.** Logo is consistent but the palette is not — maybe one dominant color but with random accent colors appearing ad hoc. Voice is mostly consistent within a single page but varies noticeably across pages. Footer copyright year is current or within 1 year.
-- **11-15: Mostly consistent.** Logo is consistent, palette is mostly consistent (one primary, one accent, used repeatedly), voice is identifiable across the site. Taglines and headlines align. Footer copyright year is current. Minor drift in one area (e.g., one page has a different heading treatment) is acceptable at this band.
-- **16-20: Fully locked.** Logo is consistent across every page and rendered as a real asset (SVG or high-resolution PNG). Palette is locked: primary, accent, and neutral are used the same way on every page. Voice is distinctive and consistent enough that a reader could pick this site's copy out of a lineup of ten contractor sites. Taglines, headlines, and microcopy all feel like they came from one hand.
-
-#### Scoring protocol
-
-1. Score each category independently. Do not let a high score in one category raise the score in another by halo effect.
-2. For each category, read the four bands in order and stop at the first band that matches. If the prospect matches criteria from two adjacent bands, take the lower band.
-3. Within the chosen band, pick a specific integer from the 5-point range based on how well the prospect matches the band description. Strong fit → top of range; weak fit → bottom of range.
-4. Sum the five category scores for the total out of 100.
-5. Map the total to the tier using the tier assignment rules in the next section.
-6. Show the breakdown at the approval gate with a one-line explanation per category (the specific band text, not a generic "good/bad" comment).
-
-The rubric is designed to be mechanical enough that a fresh Claude Code session running Phase 4 on a previously-captured `profile.json` will produce a score within ±2 points per category of the original run. Larger drift indicates the rubric itself needs tightening — report the drift to Ron and flag it for a `LESSONS.md` entry under category WORKFLOW.
+- **Copy Language (0-20):** Headlines specific and benefit-driven or generic? Grammar issues?
+- **Visual Quality (0-20):** Photos professional? Palette intentional? Logo clean?
+- **Business Maturity (0-20):** Review count? Years in business? Team bios? Certifications?
+- **Site Sophistication (0-20):** Mobile-responsive? Loads under 3 seconds? Looks 2025 or 2010?
+- **Brand Intentionality (0-20):** Consistent logo? Defined palette? Clear voice?
 
 ### Tier assignment (affects copy depth, not hero mode)
 
@@ -499,7 +445,6 @@ If all three conditions hit, generate the sub-page. If any fails, roll the servi
 - Every service description is 1 to 2 sentences, benefit-first.
 - Every number is real. Never invented.
 - Every photo is from `assets/photos/` subfolders. Never hotlinked.
-- **Featured service card image rotation (v0.7.2).** When the same featured service card renders on more than one page (e.g., homepage services preview AND `services.html`), the copy and structure may be shared but the IMAGE must differ between instances. Phase 5 consumes `photoAssignments.featuredServiceRotation[serviceSlug]` in order: first instance = `rotation[0]`, second instance = `rotation[1]`, etc. Full spec in `references/image-handling.md` under "FEATURED SERVICE CARD IMAGE ROTATION". Phase 6 hard-fails the build if a featured service card image path appears on two or more pages (logo/brand assets and hero slides are excluded from the check).
 - The stats section ALWAYS uses the dark treatment. This is non-negotiable and gives every v0.7 flagship the mandatory visual rhythm reset.
 - Every section gets the Glare Hover, Shimmer Button, or other Magic UI enhancement specified in `references/css-framework.md` where appropriate.
 - Run the anti-slop rule check from `references/anti-slop-rules.md` on all generated copy and CSS before writing files.
@@ -565,15 +510,13 @@ Every page gets: LocalBusiness JSON-LD schema, Service schema for service pages,
 
 Every site gets: `sitemap.xml` at root, `robots.txt` at root, `llms.txt` at root (pointing AI crawlers at clean markdown versions of key pages).
 
-**OG image composite generator (v0.7.3 Rule 5).** Phase 5.5 generates `assets/og-image.png` (1200x630) as a photo composite, NOT a solid-color graphic. The composite layers: (1) primary hero candidate photo cropped to 1200x630, (2) top 20% vignette (black at 25% opacity ramping to 0%), (3) 160px solid brand-primary bottom bar with hard crisp top edge, (4) three lines of white text on the bar: tagline at 32px medium, business name (tight-tracked -1px) + 70%-opacity pipe + phone at 38px bold, URL at 26px muted white (220,220,220). Font: Space Grotesk TTF downloaded at build time to `[slug]/fonts/` cache, falling back to Helvetica Neue. Vertical spacing: 18px top pad, 12px gap, 10px gap, 8px bottom pad. Bar color from `brandPalette.primary` (fallback `#1a1a1a`). Full pixel-level recipe in `references/seo-geo.md` under "OG IMAGE — PHOTO COMPOSITE GENERATOR". Supersedes the v0.7.2 solid-color OG rule.
-
 Run validation: JSON-LD passes Google Rich Results Test, sitemap validates against sitemaps.org spec, llms.txt follows the AnswerDotAI spec format.
 
 ## Phase 6 — Pre-deploy verification
 
 Goal: automated quality gates that fail the build if any check fails. No shipping broken sites. No relying on Ron's eye for things a script can verify.
 
-Phase 6 runs eighteen checks organized into seven categories. All checks must pass before Phase 7 deploy. On any failure, log the specific failure and stop.
+Phase 6 runs seventeen checks organized into six categories. All checks must pass before Phase 7 deploy. On any failure, log the specific failure and stop.
 
 ### Content integrity checks
 
@@ -626,10 +569,6 @@ Phase 6 runs eighteen checks organized into seven categories. All checks must pa
     - Accessibility score ≥ 90
 
 17. **Mobile render verification at 375px.** Use headless Chrome at 375px viewport width (iPhone SE baseline) to render the homepage. Verify: no horizontal scroll, hero CTA is visible above the fold, mobile bottom CTA bar is sticky at the bottom, navigation collapses to hamburger, phone number is tappable. This is the automated backup to Ron's phone eye test (check 6 of the Six Checks done bar).
-
-### OG integrity checks (v0.7.3)
-
-18. **OG image entropy gate.** Load `assets/og-image.png`, convert to grayscale, compute the Shannon entropy of the pixel intensity histogram. Shannon entropy formula: `H = -sum(p * log2(p))` where `p` is the normalized frequency of each intensity value (0-255) in the histogram and values where `p = 0` are skipped. If entropy < 6.0, fail the build with message: `"OG image entropy [value] below threshold 6.0 — composite lacks visual content. Check Phase 5.5 output and primary hero photo selection."` If entropy >= 6.0, pass. This check prevents regressions to the v0.7.2 failure mode where a flat solid-color or gradient graphic was shipped as the OG image. Reference entropy values: solid-color image ~0, two-color graphic (v0.7.2's red/black rectangle) ~2.5-3.5, simple gradient ~4.0-5.0, photo composite (v0.7.3 b6 recipe) 6.5-7.5. The 6.0 threshold is a conservative floor that any real photo composite clears easily. Known limitation: a smooth multi-stop gradient (not a flat block) can produce entropy above 6.0 due to high pixel-intensity diversity, but this failure mode cannot arise from the Rule 5 composite recipe which always starts with a real photo. The 6.0 gate targets the actual v0.7.2 regression artifact (entropy 3.25), not hypothetical gradient art.
 
 ### Helper scripts
 
@@ -735,28 +674,4 @@ Ready for Ron to review on mobile. Next step: open the URL on your phone and run
 
 ## Version
 
-prospect-site v0.7.2, current as of 2026-04-10. Built on v0.5's foundation (heavily specified flagship 1 hero, Phase 2.5 SEO audit, Phase 5.5 GEO injection, Plant Street voice, CSS hygiene rules) plus Cowork's 21st.dev hero research (Glassmorphism Trust Hero as content layer, data-driven background modes), plus anthropics/skills progressive disclosure pattern, plus frontend-design anti-slop rules, plus Magic UI extracts for button and card enhancements, plus Aceternity pattern rebuilds in vanilla JS. Architectural antidote to v0.6's four-pattern collapse: one structural pattern, heavily specified, deterministic data-driven variation.
-
-## Changelog
-
-### v0.7.2 — 2026-04-10
-
-Source: real-world observations from T&F Electric clean v0.7.1 run (Flagship 1 completion on 2026-04-10, live at https://tandf-electric-v07.vercel.app).
-
-Three new rules added:
-
-1. **LOGO CAPTURE — TIERED WITH SOFT-WARNING FALLBACK** (`references/image-handling.md`). Phase 1 logo capture is now tiered: Tier 1 = `<img>` inside header/hero/nav matched by alt/filename/class, Tier 2 = OG image / apple-touch-icon / favicon ≥128×128, Tier 3 = type-based wordmark in captured brand font and primary color. Tier 3 triggers a Phase 6 soft warning but NEVER fails the build. Real-world trigger: T&F Electric's IONOS MyWebsite template has zero logo files — brand identity lived entirely in inline CSS colors on styled text. Referenced from `SKILL.md` Phase 1 step 4 and Phase 2 step 5.
-
-2. **FEATURED SERVICE CARD IMAGE ROTATION** (`references/image-handling.md`). When the same featured service renders on multiple pages (e.g., homepage services preview AND `services.html`), copy/structure may be shared but the IMAGE must differ between instances. Phase 3 maintains `photoAssignments.featuredServiceRotation[serviceSlug]`. Phase 5 consumes it sequentially. Phase 6 adds a hard-fail gate that scans rendered HTML for featured card image paths appearing on multiple pages. Real-world trigger: T&F Electric's Generator + Surge Protection featured card used the same `gp-09.jpg` on both index.html and services.html. Referenced from `SKILL.md` Phase 5 "Hard rules for Phase 5" section.
-
-3. **OG IMAGE COLOR — MUST PULL FROM CAPTURED BRAND PALETTE** (`references/seo-geo.md`). OG image background color MUST use `brandPalette.primary` from Phase 2 profile-draft. Hardcoded defaults forbidden. Null-fallback is neutral dark gray `#1a1a1a`, never blue or any accent. Phase 6 verifies primary color hue within ±20° of captured brand. Real-world trigger: preventing the flattening failure where every generated OG image defaults to generic navy regardless of the prospect's actual brand. Referenced from `SKILL.md` Phase 5.5 OG meta generation section.
-
-Validation: not yet run on a real build. Scheduled for Flagship 2 next session.
-
-### v0.7.1 — 2026-04-10
-
-Base version that produced the T&F Electric flagship. No changelog entry; v0.7.1 was the version string at the time of the T&F build. See `references/LESSONS.md` entries dated 2026-04-10 for all observations that drove v0.7.2.
-
-### v0.7 — 2026-04-09
-
-Initial v0.7 architecture: one structural hero pattern with data-driven background modes (parallax / glass-crossfade / glass-single-mesh / glass-pure-mesh), progressive disclosure reference file system, deterministic Phase 4 decision tree, 17-check Phase 6 verification gate, hand-rolled components (no Magic MCP). Antidote to v0.6's four-pattern collapse.
+prospect-site v0.7, built Thursday April 9, 2026. Built on v0.5's foundation (heavily specified flagship 1 hero, Phase 2.5 SEO audit, Phase 5.5 GEO injection, Plant Street voice, CSS hygiene rules) plus Cowork's 21st.dev hero research (Glassmorphism Trust Hero as content layer, data-driven background modes), plus anthropics/skills progressive disclosure pattern, plus frontend-design anti-slop rules, plus Magic UI extracts for button and card enhancements, plus Aceternity pattern rebuilds in vanilla JS. Architectural antidote to v0.6's four-pattern collapse: one structural pattern, heavily specified, deterministic data-driven variation.
