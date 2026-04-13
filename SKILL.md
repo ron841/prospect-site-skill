@@ -573,7 +573,7 @@ Run validation: JSON-LD passes Google Rich Results Test, sitemap validates again
 
 Goal: automated quality gates that fail the build if any check fails. No shipping broken sites. No relying on Ron's eye for things a script can verify.
 
-Phase 6 runs seventeen checks organized into six categories. All checks must pass before Phase 7 deploy. On any failure, log the specific failure and stop.
+Phase 6 runs eighteen checks organized into seven categories. All checks must pass before Phase 7 deploy. On any failure, log the specific failure and stop.
 
 ### Content integrity checks
 
@@ -626,6 +626,10 @@ Phase 6 runs seventeen checks organized into six categories. All checks must pas
     - Accessibility score ≥ 90
 
 17. **Mobile render verification at 375px.** Use headless Chrome at 375px viewport width (iPhone SE baseline) to render the homepage. Verify: no horizontal scroll, hero CTA is visible above the fold, mobile bottom CTA bar is sticky at the bottom, navigation collapses to hamburger, phone number is tappable. This is the automated backup to Ron's phone eye test (check 6 of the Six Checks done bar).
+
+### OG integrity checks (v0.7.3)
+
+18. **OG image entropy gate.** Load `assets/og-image.png`, convert to grayscale, compute the Shannon entropy of the pixel intensity histogram. Shannon entropy formula: `H = -sum(p * log2(p))` where `p` is the normalized frequency of each intensity value (0-255) in the histogram and values where `p = 0` are skipped. If entropy < 6.0, fail the build with message: `"OG image entropy [value] below threshold 6.0 — composite lacks visual content. Check Phase 5.5 output and primary hero photo selection."` If entropy >= 6.0, pass. This check prevents regressions to the v0.7.2 failure mode where a flat solid-color or gradient graphic was shipped as the OG image. Reference entropy values: solid-color image ~0, two-color graphic (v0.7.2's red/black rectangle) ~2.5-3.5, simple gradient ~4.0-5.0, photo composite (v0.7.3 b6 recipe) 6.5-7.5. The 6.0 threshold is a conservative floor that any real photo composite clears easily. Known limitation: a smooth multi-stop gradient (not a flat block) can produce entropy above 6.0 due to high pixel-intensity diversity, but this failure mode cannot arise from the Rule 5 composite recipe which always starts with a real photo. The 6.0 gate targets the actual v0.7.2 regression artifact (entropy 3.25), not hypothetical gradient art.
 
 ### Helper scripts
 
