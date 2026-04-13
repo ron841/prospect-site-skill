@@ -842,7 +842,29 @@ Phase 1 attempts logo capture in tiers, stopping at the first tier that succeeds
 
 ### Tier 1 (preferred): `<img>` inside header, hero, or nav
 
-Scan the raw homepage HTML for `<img>` tags matching ANY of these criteria, in priority order:
+**Pre-filter: domain filter (v0.7.3 Rule 1).** Before evaluating ANY candidate `<img>` for logo heuristics, verify the image URL belongs to the prospect, not a CMS platform. This filter runs on every candidate in Tier 1 AND Tier 2. Candidates that fail the filter are silently skipped with a build-log entry noting `"rejected: platform CDN"`.
+
+**Domain filter algorithm:**
+
+1. Resolve the candidate image `src` to an absolute URL (handle protocol-relative `//`, relative `/path`, and absolute `https://`).
+2. Extract the candidate hostname.
+3. Extract the prospect hostname from the prospect URL provided in the skill invocation.
+4. **CMS-platform CDN blocklist check (reject first).** If the candidate hostname matches any of these patterns, reject immediately with reason `"platform CDN"`:
+   - `*.initial-website.com` (IONOS)
+   - `*.wixstatic.com` (Wix)
+   - `*.squarespace-cdn.com` (Squarespace)
+   - `*.weebly.com`, `cdn2.editmysite.com` (Weebly)
+   - `*.godaddysites.com` (GoDaddy)
+   - `*.jimdo.com`, `*.jimdosite.com` (Jimdo)
+   - `*.shopify.com`, `cdn.shopify.com` (Shopify platform assets, not store assets)
+5. **Prospect domain match check (accept).** Extract the registrable domain from both the candidate hostname and the prospect hostname. A registrable domain is the domain under the public suffix (e.g., `tandfelectric.com` from `www.tandfelectric.com` or `assets.tandfelectric.com`). Accept the candidate if:
+   - The candidate registrable domain equals the prospect registrable domain, OR
+   - The candidate hostname equals the prospect hostname exactly
+6. **If neither blocklist nor prospect-match fires,** reject the candidate with reason `"unrecognized third-party domain"` and log. This is conservative: unknown CDNs are rejected by default. If a legitimate prospect CDN is rejected, the build falls through to the next candidate or the next tier, which is the correct behavior (better to miss a logo and trigger Tier 3 than to capture a platform logo).
+
+**Registrable domain extraction (no external dependency).** Strip `www.` prefix if present. Use the hostname minus the leftmost label if the hostname has 3+ labels (e.g., `cdn.tandfelectric.com` becomes `tandfelectric.com`). For 2-label hostnames (`tandfelectric.com`), the registrable domain IS the hostname. This heuristic handles the common cases (subdomain CDNs, www prefix) without requiring a public-suffix-list library. It does not handle multi-level TLDs (`.co.uk`, `.com.au`) but those are uncommon in the Marion County contractor vertical and can be added if a real case surfaces.
+
+**After the domain filter passes,** evaluate the candidate against the existing five logo heuristics:
 
 1. Alt text contains the business name (case-insensitive, partial match acceptable)
 2. Alt text contains the word "logo"
