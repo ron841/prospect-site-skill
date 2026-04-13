@@ -347,3 +347,48 @@ The only time entries can be removed is during a major version rebuild (e.g., v0
 ## Version
 
 LESSONS.md v0.7.0 seed file. Created April 9, 2026 at the end of the v0.7 build session. Eleven foundational entries spanning eleven of the twelve categories (PHOTOGRAPHY does not yet have a documented incident and will be added when one occurs). The format is established; future appends must follow the template above. Phase 8 is responsible for automatic appends; manual appends are welcome at any time. The file grows over time and is read at the start of every new build to remind the skill what has already been learned the hard way.
+## 2026-04-13 — Skill versioning, spec precision, and the iteration ceiling
+
+**Category:** Process / Skill engineering
+
+### What happened
+
+A six-hour skill engineering sprint attempted to produce v0.7.3 from a baseline of v0.7.1 (Friday floor) and v0.7.2 (Monday morning, regressed). The sprint produced a precise specification document, seven implemented rules across the skill and the site-review mission, and a deployed test build. The deployed build did not meaningfully improve on v0.7.1. All seven rules were reverted at 3:30 PM. The skill was restored to v0.7.1 from a desktop backup.
+
+### The lessons that hold beyond this specific sprint
+
+**1. The skill must be under git before any rule changes.**
+Before today, the skill was unversioned plain markdown. v0.7.1's source code was overwritten on Monday's v0.7.2 install and was unrecoverable from the skill folder. The recovery was only possible because Ron had a desktop backup. From now on, the skill lives in git at `~/.claude/skills/prospect-site/.git` and every change is committed. This is non-negotiable infrastructure.
+
+**2. Spec precision does not equal output quality.**
+The v0.7.3 spec was the most precise document the skill has ever had — six iterations on the OG composite recipe, exact pixel specs, locked vertical spacing, defined font fallback chain. The implementation matched the spec. The deployed site still missed the bar. Specs prevent ambiguity in execution; they do not prevent the spec itself from being wrong about what "good" looks like. The only true acceptance test is a full rebuild reviewed with real eyes on a real device.
+
+**3. Set a hard iteration ceiling per sprint.**
+Today's sprint had no ceiling. Six OG mockup iterations was the right call. Six rules was too many for one afternoon. By the time the rebuild surfaced the problems, the cumulative cost of seven commits made another iteration cycle the wrong investment. Future skill sprints should declare a maximum number of rules upfront and stop when that number is hit, regardless of how many candidate rules remain.
+
+**4. The audit-spec-implement-rebuild cycle is too long to run more than once per sprint.**
+Plan for one full cycle per sprint. If the rebuild reveals problems that need another spec revision and another implementation pass, the sprint is over and the work moves to the next sprint. Compressing two cycles into one day produces the failure mode where reverting becomes the only sane option.
+
+**5. Manual touch-up per build is a legitimate strategy.**
+Pursuing skill perfection while real prospects are waiting to be contacted is the wrong tradeoff. The skill produces a good first draft. Ron's eye is the final filter. A 15-30 minute manual edit pass per deployed site is acceptable, expected, and scales reasonably for the current prospect volume. This is documented in the post-build edit playbook at `~/grm-automations/docs/post-build-edit-playbook.md`.
+
+**6. The audit infrastructure (grm-browser + Playwright) earned its keep.**
+Even though today's sprint reverted, the 36-capture audit produced in 30 minutes was the right tool. Future sprints should use it. Real rendered output beats assumptions every time.
+
+### What this means for future skill changes
+
+- Any future skill rule change starts with a git commit of the current state, a stated iteration ceiling, and a defined acceptance test that includes a full rebuild on a real prospect.
+- Skill changes that make the deployed output worse get reverted, not patched. v0.7.2's regressions and v0.7.3's failure to improve on v0.7.1 are both examples — the right move in both cases would have been earlier reverts.
+- The post-build edit playbook is the active workflow. The skill is the first draft, not the final product.
+
+### Files affected
+
+None. This is a process lesson, not a code change. The skill at v0.7.1 (commit `0498ca3`) is the active code.
+
+### Reference
+
+- v0.7.3 spec preserved at git commit `7134045`
+- All seven v0.7.3 rule commits preserved at `e688101` through `47135d9`
+- Today's handoff doc at `~/grm-automations/docs/handoffs/HANDOFF_2026-04-13.md`
+- Audit captures at `~/grm-automations/audits/tandf-v07-vs-v072-2026-04-13/`
+- v0.7.2 snapshot at `~/grm-automations/flagship-snapshots/tandf-electric-v072-2026-04-13/`
