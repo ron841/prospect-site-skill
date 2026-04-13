@@ -1432,47 +1432,86 @@ seo-geo.md v0.7.0. Foundation file for Phase 5.5 structured data injection and P
 
 ---
 
-## OG IMAGE COLOR — MUST PULL FROM CAPTURED BRAND PALETTE
+## OG IMAGE — PHOTO COMPOSITE GENERATOR (v0.7.3 Rule 5)
 
-Added in v0.7.2. Real-world observation from T&F Electric clean v0.7.1 run: earlier drafts of the skill risked defaulting the OG image background to a hardcoded navy/blue even though the captured brand primary was a vivid red (#fd040a). Hardcoding brand colors is a fabrication risk and it flattens every generated site into a visual sameness. The OG image is often the first thing a prospect sees when the preview URL is texted to them — it must match their brand.
+Supersedes the v0.7.2 "OG IMAGE COLOR" section. v0.7.2 fixed the brand-color metric (sky-blue photo replaced with a solid-red graphic) but produced an artifact with zero business context. v0.7.3 generates a composite that carries both: real business photo + brand-color bottom bar with identity text.
 
-### Rule
+Recipe locked from variant b6 mockup, approved 2026-04-13. Reference mockup at `~/grm-automations/audits/tandf-v07-vs-v072-2026-04-13/og-mockups/variant-b6-final-polish.png`.
 
-The OG image background color MUST use `brand.colors.primary` from the Phase 2 `profile-draft.json`. Hardcoded default colors are forbidden.
+### Trigger
 
-- **Primary source:** `profile-draft.brandPalette.primary` (the same hex that drives `--color-primary` in `style.css`)
-- **Never use:** a generic navy, a generic blue, a generic brand-neutral dark, or any color not derived from the prospect's captured brand
-- **Fallback on null/missing:** a neutral dark gray (`#1a1a1a`). Never blue. Never an accent color from a different prospect. Never a "GRM brand color."
+Phase 5.5, as a new step that runs AFTER Phase 3 has populated the photo manifest and BEFORE the meta tag injection step writes OG tags. Insert as responsibility 6.5 in the Phase 5.5 responsibilities list (between step 6 ImageObject schema and step 7 meta tags).
 
-### Why this rule exists
+### Inputs (all from profile.json and the build's assets/)
 
-Two failure modes the rule prevents:
+- **Source photo:** the primary hero candidate photo from `photoAssignments.heroCandidates[0]`, accessed at its captured path inside `assets/photos/` (typically `assets/photos/google/gp-NN.jpg`). Use the largest available resolution (Phase 3 downloads at 1600px long edge).
+- **Brand primary hex:** `profile.json -> brandPalette.primary`. Fallback `#1a1a1a` if null.
+- **Business name:** `profile.json -> businessName`, uppercased for Line 2.
+- **Phone:** `profile.json -> phone`, formatted with parentheses.
+- **Tagline:** `profile.json -> featuredPromo.subheadline` or the Phase 4 hero headline candidate. If neither exists, use `"[businessName] | [primaryCity], [state]"`.
+- **Website URL:** the prospect's real domain, lowercased, no protocol, no trailing slash (e.g., `tandfelectric.com`).
+- **Dark primary for shadow:** derive by converting `brandPalette.primary` to HSL, reducing lightness to ~40%, converting back to RGB. Used as the drop shadow color.
 
-1. **Flattening:** if every OG image defaults to the same blue, every preview Ron texts looks like it came from the same template, and the "we built you a custom site" message evaporates in the link preview before the prospect even taps through.
-2. **Fabrication:** picking a default color that happens to look nice is the same class of mistake as inventing a testimonial or a review count. The OG image is a promise that what you see in the preview matches the real site. A mismatched color breaks that promise in the preview thumbnail.
+### Output
 
-### Phase 5 implementation
+- **File:** `assets/og-image.png`
+- **Dimensions:** 1200 x 630 pixels
+- **Format:** PNG
+- **Referenced by:** `<meta property="og:image">` and `<meta name="twitter:image">` on all generated pages, pointed at `[canonical URL]/assets/og-image.png`.
 
-Phase 5.5 (OG image generation) reads `brandPalette.primary` from the profile before rendering. If the value is present, uses it as the solid background fill or as the `colorstop 0` of a gradient that stays in-family (same hue, darker at top). If the value is `null` or missing, uses `#1a1a1a` solid. Never interpolate a default.
+### Algorithm (Pillow, executed inline at build time)
 
-### Phase 6 gate
+**Step 1: Load and crop source photo to 1200x630.**
 
-Phase 6 adds a check: fetch the generated OG image, sample the dominant background color, convert to HSL, compare against `brandPalette.primary` HSL. If the hue is more than 20° off OR the saturation is more than 30% off, the build fails with:
+Load the source photo in RGB mode. Compute the target aspect ratio (1200/630 = 1.905). If the source is wider than 1.905:1, crop horizontally from center. If narrower, crop vertically, biased toward the top (use top 25% as the crop origin, not center, because contractor photos typically have sky at top and subject at bottom). Resize the cropped result to exactly 1200x630 using Pillow `LANCZOS`.
+
+**Step 2: Apply top vignette.**
+
+Darken the top 20% of the image to mute sun flares and bright sky without looking filtered. Implementation: create an RGBA overlay of size 1200x630, fully transparent. For each row `y` from 0 to `vignette_bottom` (where `vignette_bottom = int(0.20 * 630) = 126`), compute alpha as `int(64 * (1.0 - y / vignette_bottom))` (64 = 25% of 255). Fill that row with `(0, 0, 0, alpha)`. Composite the overlay onto the photo using `Image.alpha_composite`. Convert result back to RGB.
+
+**Step 3: Paste solid brand-primary bottom bar.**
+
+Create a solid RGB rectangle of size 1200x160 filled with the brand primary color. Paste it onto the image at position `(0, 470)` (pixel row 470 = 630 - 160). This is a hard paste, not an alpha composite. The top edge is crisp with no gradient, no fade, no feathering.
+
+**Step 4: Render text on the bar.**
+
+All text is white `(255, 255, 255)` with a drop shadow at `(dark_primary_rgb)` offset 2px right and 2px down. Render shadow first, then main text on top.
+
+**Font loading.** At build time, attempt to download Space Grotesk TTF files from Google Fonts to a per-build cache at `~/grm-sites-prospects/[slug]/fonts/`:
 
 ```
-OG image primary color drift — expected ~hue H°, sat S%, got hue H'°, sat S'%.
-Regenerate OG image from captured brand primary.
+https://fonts.google.com/download?family=Space+Grotesk
 ```
 
-The 20° hue tolerance exists to allow darker gradient stops of the same color family. Pure-red brand → darker-red gradient stop is fine. Pure-red brand → navy is not.
+Unzip and use `SpaceGrotesk-Medium.ttf` (Line 1), `SpaceGrotesk-Bold.ttf` (Lines 2), `SpaceGrotesk-Regular.ttf` (Line 3). If the download fails or the TTF files are not found, fall back to Helvetica Neue at `/System/Library/Fonts/HelveticaNeue.ttc` (index 0 = Regular, index 1 = Bold). Log which font was used. The cache is per-build (lives inside the prospect folder), not per-skill (no binary fonts committed to the skill repo).
 
-### Fallback path acceptance
+**Line 1 (tagline).** Position: `(60, BAR_TOP + 18)` where `BAR_TOP = 470`. Font: Medium weight, 32px. Color: white `(255, 255, 255)`. Shadow: dark primary, offset (62, BAR_TOP + 20). Content: the tagline string.
 
-If `brandPalette.primary` is genuinely missing (e.g., a prospect with no logo, no inline colors, no branded assets at all), the `#1a1a1a` neutral dark gray fallback is accepted by Phase 6 without warning. The fallback is not a failure mode; it is the correct response to "no brand color was captured."
+**Line 2 (identity).** Position: `(60, BAR_TOP + 18 + 38 + 12)` = `(60, 538)`. Font: Bold, 38px. This line has three segments rendered separately:
+
+1. **Business name** (e.g., `T&F ELECTRIC`): rendered character-by-character with -1px letter-spacing. Track the x cursor as each character is drawn: `x += glyph_width + (-1)`. Color: white.
+2. **Pipe separator**: rendered at `x + 16px` gap. Color: `(255, 255, 255)` at 70% opacity, which is `(178, 178, 178)` when pre-composited against the red bar (or rendered as `(255, 255, 255, 178)` if using RGBA mode). Use the same bold font at 38px. After the pipe, advance `x += pipe_width + 16px`.
+3. **Phone number** (e.g., `(352) 465-4600`): rendered at the current x position with default letter-spacing. Color: white. Same bold font at 38px.
+
+Line 2 shadow rendering: The shadow must be rendered using the same three-segment approach as the main pass — tight-tracked business name segment, pipe segment, phone segment — each drawn at offset (+2, +2) from its main-pass position in dark-primary color. Do NOT render the shadow as a single draw.text() call containing the full Line 2 string, because the character-by-character tight tracking on the business name changes the x-positions of the pipe and phone segments. A single-call shadow will misalign with the multi-segment main pass and produce a visible ghost duplicate.
+
+**Line 3 (URL).** Position: `(60, 538 + 44 + 10)` = `(60, 592)`. Font: Regular weight, 26px. Color: `(220, 220, 220)` (muted white). Shadow: dark primary at offset (+2, +2). Content: the website URL string.
+
+**Step 5: Save.** Save as `assets/og-image.png` in PNG format. Log the file size and confirm the output dimensions are 1200x630.
+
+### Brand color rules (carried forward from v0.7.2, still enforced)
+
+- The bottom bar color MUST be `brandPalette.primary`. Hardcoded defaults are forbidden.
+- If `brandPalette.primary` is null or missing, use `#1a1a1a` neutral dark gray. Never blue, never an accent color.
+- Phase 6 hue-drift check (existing check from v0.7.2): sample the bottom bar area of the generated OG image, verify dominant color is within 20 degrees hue of `brandPalette.primary`. Tolerance exists for the vignette darkening in the photo area, not for the bar (which should match exactly).
+
+### Phase 6 gate (v0.7.3 Rule 6, documented here for cross-reference)
+
+Rule 6 adds a new Phase 6 check (check 18): compute Shannon entropy of the OG image. If entropy < 6.0, fail the build. A photo composite clears this easily (entropy 6.5-7.5). A solid-color graphic or flat gradient fails (entropy 2.5-5.0). This prevents regressions to the v0.7.2 template-graphic failure mode. Full Rule 6 spec in the v0.7.3 spec document.
 
 ### Cross-references
 
-- `image-handling.md` brand color extraction rules (feeds `brandPalette.primary`)
-- `SKILL.md` Phase 5 / Phase 5.5 (OG image generation references this rule)
-- `SKILL.md` Phase 6 (new hue-drift check added alongside existing 17)
-- `css-framework.md` `--color-primary` uses the same captured value
+- `image-handling.md` Phase 3 photo capture (feeds `heroCandidates[0]`)
+- `SKILL.md` Phase 5.5 (composite generation step added before meta tag injection)
+- `css-framework.md` `--color-primary` uses the same `brandPalette.primary` value
+- `SKILL.md` Phase 6 check 18 (entropy gate, Rule 6)
