@@ -872,7 +872,27 @@ Phase 1 attempts logo capture in tiers, stopping at the first tier that succeeds
 4. `<img>` is a descendant of `<header>`, the first `<nav>`, or the first `<a href="/">` anchor
 5. Class or id contains "logo", "brand", "wordmark", or "site-logo"
 
-Save the first matching image as `assets/logo-original.[ext]` preserving the original format (SVG, PNG, JPG, WebP). If the file is SVG, also generate a PNG copy via sharp at `assets/logo.png` for node-vibrant analysis.
+**If a candidate matches a heuristic,** download it to a temp path and run the **content-aware solid-color check (v0.7.3 Rule 2)** before accepting it as the logo. This prevents solid-color background images (e.g., T&F's 940x405 solid-red `emotionheader.png`) from being accepted as logos even when they match on alt text or filename.
+
+**Content-aware solid-color check — two-stage algorithm (Pillow only, no OpenCV):**
+
+**Stage 1: 9-pixel grid sample.** Sample the image at 9 positions arranged in a 3x3 grid at relative coordinates (0.25, 0.25), (0.5, 0.25), (0.75, 0.25), (0.25, 0.5), (0.5, 0.5), (0.75, 0.5), (0.25, 0.75), (0.5, 0.75), (0.75, 0.75). Convert each to RGB. Compute the per-channel range (max minus min) across all 9 samples for R, G, and B independently. If the maximum of the three per-channel ranges exceeds 5, the image is clearly not a solid fill. **Accept immediately, skip Stage 2.** Most real logos and photos exit here.
+
+**Stage 2: edge density check (only runs if Stage 1 says "uniform").** The image might be a solid fill, or it might be a logo on a uniform background where the 9-pixel grid happened to miss the logo content. To distinguish:
+
+1. Convert the image to grayscale (Pillow `.convert("L")`).
+2. Apply Pillow's `ImageFilter.FIND_EDGES` filter. This produces a new image where edge pixels are bright and flat areas are dark.
+3. Crop the edge image by 1px on all sides (`.crop((1, 1, w-1, h-1))`) to exclude the artificial edge response Pillow produces at image boundaries where content meets implicit zero-padding. Without this crop, a perfectly solid-color image reports ~1% edge density from boundary artifacts alone.
+4. Count the number of interior pixels in the cropped edge image with value > 20.
+5. Compute edge density = count / total interior pixels.
+5. If edge density > 0.005 (0.5%), the image has real content (logo glyphs, text, graphics). **Accept.**
+6. If edge density <= 0.005, the image is genuinely a near-solid fill with no meaningful content. **Reject** with reason `"solid fill, no content"` and log. Fall through to the next candidate or the next tier.
+
+**Why threshold 0.005:** a solid-color JPEG produces edge density near 0 (only compression artifacts at block boundaries, typically 0.001 or less). A text logo on a background produces density 0.01 to 0.03. A complex logo with icons produces 0.05+. The 0.005 floor is conservative: it accepts anything with real visual content while rejecting pure fills and near-solid gradients.
+
+**Why Stage 1 exists:** performance and correctness. Most real photos and multi-color logos have per-channel deltas well above 5 across a 3x3 grid. Running edge detection on every candidate would waste time and risk false positives on heavily compressed JPEGs where block artifacts push edge density above the threshold even on photos. Stage 1 is a fast, reliable shortcut for the common case.
+
+**After the content-aware check accepts,** save the image as `assets/logo-original.[ext]` preserving the original format (SVG, PNG, JPG, WebP). If the file is SVG, also generate a PNG copy via sharp at `assets/logo.png` for node-vibrant analysis.
 
 ### Tier 2 (fallback): Open Graph image, apple-touch-icon, or favicon
 
