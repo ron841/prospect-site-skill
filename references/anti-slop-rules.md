@@ -222,6 +222,24 @@ Every button says something specific about what happens next:
 - `See all electrical services` (not "View Services")
 - `Read Sarah's full review` (not "Read More")
 
+### CTA trailing-fragment hallucination
+
+Banned pattern: trailing fine-print, secondary fragments, or SMS opt-out copy added below a primary call-to-action button. Examples caught during the A-1 Payless Septic flagship build (2026-04-15):
+
+- `<small>Or call us for faster response</small>` beneath a tel: CTA
+- `· Reply within 24 hours` appended to a CTA caption
+- `· Reply STOP to opt out` trailing a phone button (SMS opt-out language)
+- A secondary pill button rendered directly below the primary button when the section template defines only one
+
+This pattern is not in any GRM template. It is a training-data hallucination from SaaS landing pages and SMS marketing funnels that leaks into generated HTML when the model expects "a CTA section" to have accompanying fine-print. Every instance must be treated as slop.
+
+The v0.7 rule:
+
+1. No `<small>` tags anywhere in generated HTML. The GRM design system has zero legitimate uses of the tag. Phase 6 check #3 fails any `<small>` it finds.
+2. CTA sections (hero, promo-callout, contact, mobile bottom bar) render exactly the buttons defined in their template in `section-patterns.md` and `hero-patterns.md`. No sibling elements, no trailing captions, no SMS opt-out language, no "Or..." fallback copy.
+3. Reassurance copy (response times, 24/7 availability, free quote language) belongs in the subheadline or body copy of the section, not as a trailing fragment below the button.
+4. If a legitimate need for a secondary CTA exists in a section, it must be explicitly defined in the template in `section-patterns.md` — not improvised at generation time.
+
 ### "Scroll down to see more" indicators
 
 Banned globally. The bouncing arrow, the pulsing circle, the "Scroll" label at the bottom of the hero — all of these assume the user does not know how to scroll. It is condescending, visually noisy, and a template signal.
