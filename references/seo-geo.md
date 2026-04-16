@@ -1210,7 +1210,10 @@ Every page receives these meta tags in the `<head>`:
 <meta property="og:title" content="[Same as page title or shorter variant]">
 <meta property="og:description" content="[Same as meta description or shorter variant]">
 <meta property="og:url" content="[canonical URL for this page]">
-<meta property="og:image" content="[canonical URL to featured photo]">
+<meta property="og:image" content="[absolute URL to featured photo, https://]">
+<meta property="og:image:width" content="[actual width in pixels from photo manifest]">
+<meta property="og:image:height" content="[actual height in pixels from photo manifest]">
+<meta property="og:image:alt" content="[Descriptive alt text for featured photo]">
 <meta property="og:site_name" content="[Business name]">
 <meta property="og:locale" content="en_US">
 
@@ -1219,6 +1222,7 @@ Every page receives these meta tags in the `<head>`:
 <meta name="twitter:title" content="[Same as og:title]">
 <meta name="twitter:description" content="[Same as og:description]">
 <meta name="twitter:image" content="[Same as og:image]">
+<meta name="twitter:image:alt" content="[Same as og:image:alt]">
 
 <!-- Business-specific -->
 <meta name="author" content="[Business name]">
@@ -1319,8 +1323,8 @@ Phase 6 verifies SEO and GEO implementation across multiple checks. These are ha
 1. Every page has a `<title>` element under 60 characters
 2. Every page has a `<meta name="description">` element between 120 and 160 characters
 3. Every page has a `<link rel="canonical">` element
-4. Every page has OpenGraph tags (og:title, og:description, og:url, og:image)
-5. Every page has a Twitter Card tag
+4. Every page has the complete OpenGraph block (10 tags minimum per the template above, including og:image:width, og:image:height, og:image:alt)
+5. Every page has the complete Twitter Card block (5 tags minimum per the template above, including twitter:image:alt)
 6. Geo meta tags are present on the homepage
 
 ---

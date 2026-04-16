@@ -506,7 +506,9 @@ Goal: make the generated site findable by Google, Bing, and AI answer engines (C
 
 For the full schema templates and llms.txt content, see `references/seo-geo.md`. Short version:
 
-Every page gets: LocalBusiness JSON-LD schema, Service schema for service pages, FAQPage schema on pages with FAQ, Review schema for testimonials, OpenGraph meta tags, Twitter Card meta tags, canonical URL, robots meta, sitemap.xml entry.
+Every page — index, about, services, testimonials, contact, faq, and any service sub-pages — gets the complete social metadata block from the template in `references/seo-geo.md` > "Meta tag templates". This means a minimum of 10 OpenGraph tags plus 5 Twitter Card tags per page, with og:image and twitter:image pointing at an absolute https:// URL of a real file in `assets/photos/`. This mandate is non-negotiable — partial blocks or missing blocks on secondary pages are the Bug 4 failure mode from A-1 Payless Septic (2026-04-15) and will fail Phase 6 check #18.
+
+Every page also gets: LocalBusiness JSON-LD on the homepage, Service JSON-LD on service sub-pages, FAQPage JSON-LD on pages with FAQ, Review JSON-LD on testimonials, canonical URL, robots meta, and a sitemap.xml entry.
 
 Every site gets: `sitemap.xml` at root, `robots.txt` at root, `llms.txt` at root (pointing AI crawlers at clean markdown versions of key pages).
 
