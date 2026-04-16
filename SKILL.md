@@ -600,10 +600,11 @@ Steps:
 1. Verify Phase 6 passed with all checks green. Do not deploy otherwise.
 2. `cd ~/grm-sites-prospects/[business-slug]`
 3. Check name availability. Determine final project name.
-4. Deploy: `vercel --prod --yes --name [final-project-name]`
-5. Capture the returned URL.
-6. Test the URL with curl. Confirm 200 status and the business name appears in the body.
-7. Report the live URL to Ron in a visible format.
+4. **Slug reconciliation.** The final project name from step 3 determines the deployed alias (`[final-project-name].vercel.app`). Before deploying, grep all generated `.html` files, `sitemap.xml`, `robots.txt`, and `llms.txt` for any `.vercel.app` reference that differs from this final alias. If any stale references are found (Phase 5 wrote URLs using the Phase 1 draft slug, but the final project name differs due to slug shortening or collision suffix), replace them across all affected files before deploying. Affected artifacts: `<link rel="canonical">`, `<meta property="og:url">`, form `redirectTo` hidden inputs, JSON-LD `@id` and `url` fields, `sitemap.xml` `<loc>` entries, `llms.txt` page links, and `robots.txt` Sitemap pointer. Log the reconciliation (old alias → new alias) for the Phase 8 done report. If no stale references are found, proceed directly to step 5. For the detailed reconciliation procedure, see `references/deployment.md` > Step 2.5.
+5. Deploy: `vercel --prod --yes --name [final-project-name]`
+6. Capture the returned URL.
+7. Test the URL with curl. Confirm 200 status and the business name appears in the body.
+8. Report the live URL to Ron in a visible format.
 
 For full deployment and domain migration details, see `references/deployment.md`.
 
