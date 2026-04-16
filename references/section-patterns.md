@@ -1260,6 +1260,7 @@ Only render if Phase 2 captured a real promotion with real pricing.
 - Use exact wording from the prospect's own site, lightly tightened to Closing Table voice (per content-rules.md voice mapping: promos use Closing Table)
 - Never invent a promotion
 - Only one callout per homepage
+- No trailing elements below the CTA. The promo-callout is a single-CTA section: the `<a class="promo-callout-cta">` is the final element. No `<small>` fine-print, no SMS opt-out copy, no secondary pill button. See `anti-slop-rules.md` > CTA trailing-fragment hallucination.
 
 ---
 
@@ -1744,6 +1745,7 @@ Sticky at bottom of mobile viewport. Always visible while scrolling.
 - Call Now is always primary (linked via tel:)
 - iOS safe area padding for home indicator
 - Body needs bottom padding on mobile to prevent content cutoff
+- The bar renders exactly the two buttons defined in the HTML above. No trailing captions, no `<small>` tags, no "Or..." copy. See `anti-slop-rules.md` > CTA trailing-fragment hallucination.
 
 ---
 

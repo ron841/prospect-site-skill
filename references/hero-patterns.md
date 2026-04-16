@@ -784,3 +784,4 @@ Do NOT add `padding-top` or `margin-top` to the hero beyond the 100px allowance 
 - Do not use `box-shadow` offset blocks behind the glass card (that was v0.5's pattern, not v0.7's).
 - Do not apply the wide variant to modes other than parallax unless Phase 4 selected it (character count or Premium tier).
 - Do not hardcode the headline font-size — use the shared glass card CSS which switches via the modifier class.
+- Do not add a third button, `<small>` fragment, or disclaimer copy below the `<div class="hero-ctas">` block. The two buttons defined in the shared glass card content layer are the complete CTA. See `anti-slop-rules.md` > CTA trailing-fragment hallucination.
