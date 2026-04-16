@@ -518,7 +518,7 @@ Run validation: JSON-LD passes Google Rich Results Test, sitemap validates again
 
 Goal: automated quality gates that fail the build if any check fails. No shipping broken sites. No relying on Ron's eye for things a script can verify.
 
-Phase 6 runs eighteen checks organized into eight categories. All checks must pass before Phase 7 deploy. On any failure, log the specific failure and stop.
+Phase 6 runs nineteen checks organized into nine categories. All checks must pass before Phase 7 deploy. On any failure, log the specific failure and stop.
 
 ### Content integrity checks
 
@@ -575,6 +575,10 @@ Phase 6 runs eighteen checks organized into eight categories. All checks must pa
 ### Social metadata integrity
 
 18. **Social metadata completeness check.** Verify every generated page contains the complete social metadata block per the template in `references/seo-geo.md` > "Meta tag templates". For each of `index.html`, `about.html`, `services.html`, `testimonials.html`, `contact.html`, `faq.html` (and any service sub-pages): grep for and count the required OpenGraph tags (`og:type`, `og:title`, `og:description`, `og:url`, `og:image`, `og:image:width`, `og:image:height`, `og:image:alt`, `og:site_name`, `og:locale` — 10 minimum) and Twitter Card tags (`twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt` — 5 minimum). Then verify `og:image` and `twitter:image` values are absolute URLs beginning with `https://`, and that the image path each URL resolves to exists as a real file in `assets/photos/`. Any missing tag on any page, any relative URL, or any `og:image`/`twitter:image` pointing at a file that does not exist fails the build. This catches the Bug 4 failure mode from A-1 Payless Septic (2026-04-15) where the skill generated only a partial social block on index.html, minimal og-only stubs on four secondary pages, and zero metadata on faq.html.
+
+### Data fabrication checks
+
+19. **Schema-to-profile cross-reference.** For every JSON-LD block on every page, assert that `ratingValue`, `reviewCount`, `foundingDate`, `telephone`, `address`, `priceRange`, and any numeric or factual field matches `profile.json` exactly. Any mismatch fails the build. Implementation: `scripts/verify_schema_against_profile.py` loads both, compares, reports deltas. This rule was spec'd in `seo-geo.md` line 491 but not previously enumerated in the Phase 6 checklist, so it never ran as an automated gate.
 
 ### Helper scripts
 
