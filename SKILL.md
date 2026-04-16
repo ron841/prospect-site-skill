@@ -661,6 +661,7 @@ Featured promotion: [yes/no]
 Photo sources: Google [X], Site [Y], Instagram [Z], Unsplash [W]
 
 Preview URL: [vercel url]
+Slug reconciliation: [reconciled X references (old-alias → new-alias) | no action needed]
 
 Quality gates:
   HTML validation: PASS
