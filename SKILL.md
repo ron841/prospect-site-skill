@@ -524,7 +524,7 @@ Phase 6 runs seventeen checks organized into six categories. All checks must pas
 
 2. **Em dash check.** Grep all generated HTML for em dashes in both UTF-8 (`\u2014`) and HTML-entity (`&mdash;`, `&#8212;`) encodings. Fail if any found.
 
-3. **GRM voice banned phrase check.** Grep for all banned phrases from `references/content-rules.md`. Fail if any found.
+3. **Banned output check.** Grep all generated HTML for the banned strings in `references/content-rules.md` — both the voice phrase list (corporate jargon, AI tells, cliches) and the HTML slop list (hallucinated tags and trailing-fragment patterns). Fail if any found.
 
 4. **Link check.** All internal links resolve. No 404s. No `href="#"` or `action="#"` placeholders.
 
@@ -658,7 +658,7 @@ Preview URL: [vercel url]
 Quality gates:
   HTML validation: PASS
   Em dash check: PASS
-  Banned phrase check: PASS
+  Banned output check: PASS
   Link check: PASS
   Schema validation: PASS
   Lighthouse mobile LCP: [time]s

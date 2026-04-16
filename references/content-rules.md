@@ -137,6 +137,17 @@ Every line of generated copy is checked against this list during Phase 5 generat
 - "From start to finish" / "Above and beyond" / "Every step of the way"
 - "Around the clock" (use "24/7" only if literally true)
 
+### CTA trailing-fragment hallucinations (HTML slop)
+
+Hallucinated structural elements that leak into generated HTML even when no template authorizes them. Claude Code pattern-matches on "this is a CTA section" and invents training-data-style fine-print, SMS opt-out copy, or secondary buttons that are not defined in `section-patterns.md` or `hero-patterns.md`. Bug 2 from A-1 Payless Septic flagship (2026-04-15). Every instance is slop.
+
+- `<small>` — any appearance of the tag. The GRM design system has zero legitimate uses of `<small>`. Every instance in generated HTML is a hallucination.
+- `Reply within` — SMS disclaimer opener ("Reply within 24 hours" and variants). Never belongs beneath a CTA.
+- `Reply STOP` — SMS opt-out language. Contractor sites do not send marketing texts; this copy is pure pastiche.
+- `Or reply` — trailing "Or reply..." fallback copy invented beneath CTA buttons.
+
+Phase 6 check 3 greps for all four patterns. Any hit fails the build.
+
 ### The test for any phrase not on this list
 
 If the phrase could appear verbatim on a competitor's homepage in the same vertical, it fails. If the phrase only makes sense for THIS specific prospect with THEIR specific captured facts, it passes.
