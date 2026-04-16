@@ -401,3 +401,43 @@ Social preview metadata — og:image, twitter:image, and the full social preview
 
 Phase 7 slug regeneration — the skill drafts URLs in Phase 1 using the full business slug, but Phase 7 shortens the slug to meet Vercel naming constraints. No Phase 7 step regenerates URL references after the slug change, leaving every slug-bearing artifact pointing at a URL that 404s. Affected artifacts in a default build: <link rel=canonical>, og:url meta tag, Static Forms redirectTo hidden input (BREAKS LEAD CAPTURE — every form submission redirects to a 404), LocalBusiness JSON-LD @id and url fields, sitemap.xml <loc> entries, llms.txt page links, robots.txt sitemap pointer. First caught: A-1 Payless Septic flagship, 2026-04-15 — 16 stale-slug references total across the build. Action item for post-launch skill work: add a Phase 7 step that takes the final deployed Vercel alias and regenerates every URL reference across HTML files, XML files, TXT files, and JSON-LD blocks. The form redirectTo is the most critical — do not ship a build without verifying successful form submission terminates at a live thank-you page.
 
+### 2026-04-16 — WORKFLOW — Progressive-enhancement guard on `[data-reveal]` sections
+
+**Source:** Grandview Inc (F4), v0.7.2 build, 2026-04-16 afternoon session
+**Severity:** critical
+
+**What happened.** Phase 5 wired `data-reveal` on five homepage sections (services, stats, testimonials, faq, contact). The CSS set their initial state to `opacity: 0; transform: translateY(30px)` unconditionally. A JS IntersectionObserver added `.revealed` to flip them back to opacity 1 on scroll. In the Phase 6 Playwright full-page screenshot at 375px, the observer did not fire reliably during the scroll-and-stitch capture — so the screenshot showed hero and footer with a giant blank expanse between them. If JS had failed entirely (legacy browser, bot crawl, reduced-JS environment), real visitors would see the same blank page. The bug was caught by a visual eye check on the mobile screenshot, not by any Phase 6 check.
+
+**Why it matters.** A sales-weapon preview must degrade gracefully. Bots crawling for SEO, reduced-JS users, and automated screenshot tools all exist. Content rendered conditionally on a JS observer is not a defensible default.
+
+**Fix applied (for this build).** Changed CSS selector from `[data-reveal]` to `.js [data-reveal]` for the hidden initial state, and added `document.documentElement.classList.add('js')` at the top of `script.js` before any DOMContentLoaded listeners. Progressive enhancement: no-JS clients see content by default; JS-enabled clients get the reveal animation. Same treatment applied to the reduced-motion override.
+
+**Fix applied (for the skill).** `css-framework.md` §Vanilla JS animation toolkit → `[data-reveal]` CSS pattern must be updated to use the `.js` prefix. `script.js` bootstrap section must include `document.documentElement.classList.add('js')` at the top of the IIFE. Add a Phase 6 check that catches this: after forcing no-JS rendering in a headless browser, verify every [data-reveal] section has `getComputedStyle().opacity === '1'`.
+
+**Cross-reference.** Same class of bug showed up in the stats `data-target` counters: HTML rendered `0` as baseline and relied on JS to tick up to real numbers. Fix: HTML now renders the final numbers; JS resets to 0 inside the observer callback before animating. No-JS users see correct stats; JS users see the animation. Documented here as a companion lesson.
+
+### 2026-04-16 — COPY — Agent-invented "Licensed" in title + schema
+
+**Source:** Grandview Inc (F4), v0.7.2 build, 2026-04-16 afternoon session
+**Severity:** moderate
+
+**What happened.** Phase 5 was delegated to a build agent. The profile-draft.json explicitly documented "License number: NOT FOUND" and the build instructions said "Do NOT render a license number anywhere. Do NOT write 'Licensed' in CTAs or footer." The agent complied in body copy and CTAs but invented "Licensed Ocala Landscaping Since 1999" in the `<title>`, the og:title, the twitter:title, and the LocalBusiness JSON-LD `description` field. Caught by a post-deploy curl grep on the live URL that read the title and spotted "Licensed". Quick manual fix + redeploy.
+
+**Why it matters.** Title tags and JSON-LD are indexed by search engines. An invented "Licensed" claim in schema.org data is a fabrication that a diligent prospect could use to question our credibility. The instruction was explicit; the agent still regressed on page-metadata surfaces that aren't typically reviewed in the visual eye check.
+
+**Fix applied (for this build).** Removed "Licensed" from index.html title, og:title, twitter:title, and LocalBusiness JSON-LD description. Replaced with "Family Owned" / "Family-owned". Redeployed.
+
+**Fix applied (for the skill).** Add to Phase 6 check 3 (banned output check) a specific grep for "Licensed", "Licensure", and "License #" across title tags, meta tags (og, twitter), and all JSON-LD blocks — not just body copy. Build-agent prompts should move the "do not invent license" rule to the top of the section-header instructions (agents regress on later-mentioned constraints when the prompt is long). Consider a dedicated "fabrication check" step in Phase 6 that specifically diffs agent-written metadata against the profile.json `unknownFields` list and fails on any term that matches a known unsourced claim.
+
+### 2026-04-16 — INTEGRATION — Vercel bot mitigation blocks Static Forms curl test
+
+**Source:** Grandview Inc (F4), v0.7.2 build, 2026-04-16 afternoon session
+**Severity:** moderate
+
+**What happened.** Phase 6 check 14 (live form submission test) POSTs a test payload to `https://api.staticforms.xyz/submit` to verify accessKey validity and account health before deploy. The POST now receives a Vercel "Security Checkpoint" HTML challenge page (HTTP 429) regardless of user agent, content-type, or request origin headers. The challenge is a Vercel-side bot mitigation on the Static Forms edge, not a Static Forms rejection. The real accessKey is never tested.
+
+**Why it matters.** Check 14 was the automated guardrail against shipping a site with an expired Static Forms key. With the curl path blocked, we have no build-time signal, and the first time we'd learn the key was broken is when a prospect submits the form and nothing arrives in Ron's inbox.
+
+**Fix applied (for this build).** Marked check 14 as DEFERRED. Plan: verify form submission in a real browser on the deployed URL as part of the Six Checks (check 6, Ron's eye test). Not ideal, but the skill should not block deploy on an integration we can't reach.
+
+**Fix applied (for the skill).** Rewrite check 14 to run the submission through a headless browser that executes the Vercel challenge JS (Playwright with `page.goto` to the staticforms endpoint, then POST via `fetch` in the page context). Alternatively, switch to an accessKey-validation endpoint if Static Forms publishes one, or monitor for a test token delivery to Ron's inbox via Gmail MCP after a build-time submission. Until one of these lands, check 14 is DEFERRED with a visible warning in the Phase 6 report. Add a post-deploy sanity test: Ron taps "Submit" on the real form and confirms the thank-you page within 60 seconds of deploy.
