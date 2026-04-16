@@ -3,7 +3,7 @@ name: prospect-site
 description: "Generate a custom multi-page preview website for a local home services contractor prospect from their live URL. Deeply crawls the prospect's real site, captures their brand data (owners, services, testimonials, credentials, colors, photos, promotions), scores their current web presence, picks a hero background mode from a data-driven decision tree, builds a multi-page site using the GRM house style and the GRM voice mapping (Closing Table for hero/promos/cards/stats, Saturday Morning for marquees/section headers, Front Porch for footer/About), runs automated quality gates, and deploys to Vercel. Use this skill whenever the user types /prospect-site followed by a business name and URL, or asks to build a prospect preview site for a local business they want to sell to."
 ---
 
-# Prospect Site Generator (v0.7.1)
+# Prospect Site Generator (v0.7.2)
 
 ## What this skill does
 
@@ -683,4 +683,12 @@ Ready for Ron to review on mobile. Next step: open the URL on your phone and run
 
 ## Version
 
-prospect-site v0.7, built Thursday April 9, 2026. Built on v0.5's foundation (heavily specified flagship 1 hero, Phase 2.5 SEO audit, Phase 5.5 GEO injection, Plant Street voice, CSS hygiene rules) plus Cowork's 21st.dev hero research (Glassmorphism Trust Hero as content layer, data-driven background modes), plus anthropics/skills progressive disclosure pattern, plus frontend-design anti-slop rules, plus Magic UI extracts for button and card enhancements, plus Aceternity pattern rebuilds in vanilla JS. Architectural antidote to v0.6's four-pattern collapse: one structural pattern, heavily specified, deterministic data-driven variation.
+prospect-site v0.7.2, updated Wednesday April 16, 2026. Built on v0.5's foundation (heavily specified flagship 1 hero, Phase 2.5 SEO audit, Phase 5.5 GEO injection, Plant Street voice, CSS hygiene rules) plus Cowork's 21st.dev hero research (Glassmorphism Trust Hero as content layer, data-driven background modes), plus anthropics/skills progressive disclosure pattern, plus frontend-design anti-slop rules, plus Magic UI extracts for button and card enhancements, plus Aceternity pattern rebuilds in vanilla JS. Architectural antidote to v0.6's four-pattern collapse: one structural pattern, heavily specified, deterministic data-driven variation.
+
+### Changelog
+
+v0.7.2 — Validated via F3 (Chad's Lawn and Landscape). Bug 2 (CTA trailing-fragment hallucination), Bug 4 (social metadata completeness), and Bug 5 (Phase 7 slug regeneration) confirmed fixed. Honeypot field added to contact form template.
+
+v0.7.1 — Initial tagged release after A-1 Payless Septic (F2) build.
+
+v0.7 — Built Thursday April 9, 2026. First complete spec.
