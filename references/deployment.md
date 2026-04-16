@@ -125,6 +125,12 @@ vercel teams ls
 # Step 2: Check for name collision
 vercel projects ls | grep "^[business-slug]-grm"
 
+# Step 2.5: Slug reconciliation (Bug 5 fix — do NOT skip)
+FINAL_ALIAS="[final-project-name].vercel.app"
+# Grep generated files for any .vercel.app URL that doesn't match FINAL_ALIAS
+# If stale references found, replace across all .html, sitemap.xml, robots.txt, llms.txt
+# Verify zero stale references remain before proceeding to Step 3
+
 # Step 3: Deploy with explicit project name
 vercel --prod --yes --name [business-slug]-grm
 
@@ -141,6 +147,19 @@ curl -s https://[business-slug]-grm.vercel.app | grep -c "[business name]"
 **Step 1** verifies the CLI environment. `vercel whoami` must return `ron-7323` or the expected current auth identity. `vercel teams ls` must show `ron-7323` as a team the current user has access to.
 
 **Step 2** prevents collision with existing projects. Grep the output of `vercel projects ls` for the exact expected project name. If found, compute the next available suffix.
+
+**Step 2.5** reconciles URL references before deployment. This step exists because Phase 5 writes URLs into generated HTML, XML, and TXT files using the Phase 1 directory slug (e.g., `a-1-payless-septic-service-inc-grm.vercel.app`), but Step 2 may have determined a different final project name (e.g., `a-1-payless-septic-grm` due to slug shortening, or `a-1-payless-septic-grm-2` due to collision). Without reconciliation, every URL-bearing artifact ships stale — including the form `redirectTo`, which sends every successful form submission to a 404 thank-you page.
+
+The reconciliation procedure:
+
+1. Compute the final alias: `https://[final-project-name].vercel.app`
+2. Grep all `.html` files, `sitemap.xml`, `robots.txt`, and `llms.txt` for any `https://` URL containing `.vercel.app`
+3. If every found URL already matches the final alias, no action needed — proceed to Step 3
+4. If any found URL differs from the final alias, replace it with the final alias across all files. The seven artifact categories that carry URLs: `<link rel="canonical">` on every page, `<meta property="og:url">` on every page, `<input type="hidden" name="redirectTo">` on contact and index forms, JSON-LD `@id` and `url` fields in `<script type="application/ld+json">` blocks, `<loc>` entries in `sitemap.xml`, page links in `llms.txt`, and the `Sitemap:` pointer in `robots.txt`
+5. After replacement, verify with a second grep that zero stale references remain
+6. Log the reconciliation (old alias → new alias, count of replacements) for Phase 8
+
+This step is the primary defense against Bug 5 (A-1 Payless Septic, 2026-04-15, 28 stale references in initial deploy). It runs before Step 3's deploy command so the first deploy pushes correct URLs — no double deploy required.
 
 **Step 3** is the actual deployment. The flags matter:
 
@@ -1399,6 +1418,7 @@ Following the same pattern as `seo-geo.md`, naming what is deferred so nothing s
 - [ ] Vercel CLI authenticated on `ron-7323` team
 - [ ] Project name follows `[business-slug]-grm` convention
 - [ ] Collision check passed (or suffix applied)
+- [ ] Slug reconciliation ran (Step 2.5) — if the final project name differs from the Phase 1 directory slug, all URL references were rewritten and verified zero stale references before deploy
 - [ ] `vercel --prod --yes --name ...` completed with a returned production URL
 - [ ] Check 7.1 through Check 7.8 passed
 - [ ] Optional Check 7.9 Lighthouse smoke check ran or was skipped with notice
