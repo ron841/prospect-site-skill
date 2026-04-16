@@ -456,6 +456,19 @@ Parse the JSON for:
 
 If the check is not available in the deployment environment, skip it and let Ron run it manually as part of the six-check self-test.
 
+### Check 7.10: Stale-slug verification (post-deploy)
+
+Grep the deployed project directory for any `.vercel.app` reference that does not match the final deployed alias. This is the post-deploy safety net for Bug 5 — Step 2.5 should have reconciled all stale references before deployment, but this check catches anything that slipped through.
+
+```bash
+FINAL_ALIAS="[final-project-name].vercel.app"
+grep -rn '\.vercel\.app' *.html sitemap.xml robots.txt llms.txt 2>/dev/null | grep -v "$FINAL_ALIAS"
+```
+
+Expected output: zero lines. Every `.vercel.app` reference in the project should match the deployed alias exactly.
+
+If any stale reference is found: fix the affected file, redeploy with `vercel --prod --yes --name [final-project-name]`, and re-run this check. The most critical artifact to verify is the form `redirectTo` — a stale value there sends every form submission to a 404 thank-you page.
+
 ### If any Phase 7 check fails
 
 **[SKILL]** Do not mark deployment complete. Report the specific failure to Ron with the captured URL, the failing check, and any relevant curl output. Options at that point:
@@ -1420,7 +1433,7 @@ Following the same pattern as `seo-geo.md`, naming what is deferred so nothing s
 - [ ] Collision check passed (or suffix applied)
 - [ ] Slug reconciliation ran (Step 2.5) — if the final project name differs from the Phase 1 directory slug, all URL references were rewritten and verified zero stale references before deploy
 - [ ] `vercel --prod --yes --name ...` completed with a returned production URL
-- [ ] Check 7.1 through Check 7.8 passed
+- [ ] Check 7.1 through Check 7.8 and Check 7.10 passed
 - [ ] Optional Check 7.9 Lighthouse smoke check ran or was skipped with notice
 - [ ] Static Forms wiring verified on the live deployment
 - [ ] Captured preview URL ready to hand to Phase 8
