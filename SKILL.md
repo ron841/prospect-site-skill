@@ -518,7 +518,7 @@ Run validation: JSON-LD passes Google Rich Results Test, sitemap validates again
 
 Goal: automated quality gates that fail the build if any check fails. No shipping broken sites. No relying on Ron's eye for things a script can verify.
 
-Phase 6 runs nineteen checks organized into nine categories. All checks must pass before Phase 7 deploy. On any failure, log the specific failure and stop.
+Phase 6 runs twenty checks organized into nine categories. All checks must pass before Phase 7 deploy. On any failure, log the specific failure and stop.
 
 ### Content integrity checks
 
@@ -579,6 +579,14 @@ Phase 6 runs nineteen checks organized into nine categories. All checks must pas
 ### Data fabrication checks
 
 19. **Schema-to-profile cross-reference.** For every JSON-LD block on every page, assert that `ratingValue`, `reviewCount`, `foundingDate`, `telephone`, `address`, `priceRange`, and any numeric or factual field matches `profile.json` exactly. Any mismatch fails the build. Implementation: `scripts/verify_schema_against_profile.py` loads both, compares, reports deltas. This rule was spec'd in `seo-geo.md` line 491 but not previously enumerated in the Phase 6 checklist, so it never ran as an automated gate.
+
+20. **Unknown-field guard.** `profile.json` must include a top-level `"unknownFields": []` array listing any data point that Phase 1/2 searched for but could not capture (e.g., `"license_number"`, `"bbb_rating"`, `"founding_year_verified"`). Phase 6 greps generated content for any mention of those fields' associated claim vocabulary (defined in `anti-slop-rules.md` "Unknown-field claim vocabulary" section) and fails the build if claims are made about unknown data.
+
+    Example: if `"license_number"` is in `unknownFields`, the grep checks for "licensed", "license", "state-licensed", "licensing" — the vocabulary tied to that field.
+
+    This check complements `content-rules.md` "Banned credential and trust claims" (which is absolute-banned-unless-captured). Check 20 handles the case where `profile.json` explicitly declares a field as unknown, giving Phase 6 a definitive signal to fail any claim in that domain.
+
+    Implementation: `scripts/verify_unknown_fields.py` loads `profile.json`, reads `unknownFields[]`, looks up each field's claim vocabulary from `anti-slop-rules.md`, greps generated HTML, reports any match.
 
 ### Helper scripts
 
