@@ -178,6 +178,22 @@ Steps:
 
 4. Download the logo file to `assets/logo.[ext]`. If the logo is SVG, use sharp to convert a PNG copy at `assets/logo.png` for node-vibrant analysis.
 
+4a. **Logo alpha channel check and rebuild.** After download, inspect the logo PNG for alpha channel presence and corner transparency:
+
+    - If source is SVG: skip this step. SVG is transparent by nature.
+    - If PNG has alpha channel AND all four corners sample as transparent: accept as-is.
+    - If PNG has no alpha channel OR corners are opaque: rebuild the logo with chroma-key transparency:
+        * Sample the four corners of the image (20x20px each), average the color
+        * Build an alpha mask where pixels matching the corner color within tolerance become transparent
+        * Tolerance: pixels with all RGB channels ≥ 250 become fully transparent for near-white backgrounds; adjust the threshold based on the actual corner color sample
+        * Feather the mask in the 225–250 range for clean anti-aliased edges
+        * Save the result as `assets/logo.png` (4-channel RGBA)
+    - If chroma-key cannot produce clean transparency (the dominant corner color also appears in the logo content itself), log a warning, leave the logo opaque, and continue. Phase 6 check 17 (mobile render verification) will catch rendering issues if they surface.
+
+    Implementation: `scripts/rebuild_logo_alpha.py` using Pillow. Detailed spec in `references/image-handling.md` § "Logo alpha rebuild procedure".
+
+    Rationale (Grandview F4 2026-04-16): source logo was a GIF from WordPress with solid-white background. sharp conversion to PNG preserved the white fill as opaque. Combined with the footer-logo filter (removed in v0.7.3 #1), the result was an empty white rectangle in the dark footer. Transparent logos render correctly regardless of footer background color.
+
 5. Run node-vibrant on `assets/logo.png`. Capture the six semantic swatches (Vibrant, DarkVibrant, LightVibrant, Muted, DarkMuted, LightMuted). Save to `profile-draft.json` under `brandPalette` with role mapping: Vibrant becomes `primary`, DarkVibrant becomes `darkPrimary`, LightVibrant becomes `accent`, Muted becomes `neutral`, LightMuted becomes `background`.
 
 6. Set `designChoices.heroBackground` from the warm/cool temperature of `brandPalette.primary`. Warm brands get cream (`#faf7f2`). Cool brands get cool-white (`#f4f7fa`). Neutral brands default to cream.

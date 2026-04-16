@@ -828,6 +828,47 @@ Phase 3 sets these flags during the content type tagging step. Phase 6 check 6 v
 
 ---
 
+## Logo alpha rebuild procedure
+
+Referenced from SKILL.md Phase 1 step 4a.
+
+Implementation target: `scripts/rebuild_logo_alpha.py`
+Library: Pillow (no OpenCV dependency)
+Input: `assets/logo.png` (as saved by step 4)
+Output: `assets/logo.png` (overwritten with RGBA version if rebuild was needed)
+
+### Algorithm
+
+1. Load the input PNG with Pillow.
+
+2. Mode check. If the image is already `RGBA`, proceed to corner transparency check. If the image is `RGB`, `P`, `L`, or any other mode, convert to `RGBA` as a first step — this alone does not add transparency, but it gives us the alpha channel to work with.
+
+3. Corner transparency check. Sample the alpha values of the four corner pixels. If all four are 0 (fully transparent), the logo already has proper transparency — exit without modification. If any corner pixel has alpha > 0, proceed to rebuild.
+
+4. Corner color sampling. Crop a 20x20 pixel region from each of the four corners (top-left, top-right, bottom-left, bottom-right). Average the RGB values within each region, then average those four averaged values to get the canonical "background color".
+
+5. Threshold selection. Based on the background color:
+   - If all channels of the averaged background are ≥ 240, treat as "near-white" and use the default threshold: pixels with all RGB channels ≥ 250 become fully transparent; pixels with all channels between 225 and 250 get a proportional alpha in [0, 255] for feathered edges.
+   - If the background is a colored non-white (rare but possible — e.g., a logo saved with a gray or cream canvas), use a color-distance threshold: pixels within a Euclidean RGB distance of 10 from the background color become transparent; pixels within 10–30 distance get proportional alpha feather.
+
+6. Alpha mask application. For each pixel in the image, compute its new alpha value per the threshold rule. Apply to the image's alpha channel.
+
+7. Save the result as PNG with RGBA mode, overwriting the original `assets/logo.png`.
+
+### Edge cases
+
+- **Logo content matches background color.** If the chroma-key algorithm would erase significant portions of the logo itself (detected by measuring the percentage of non-transparent pixels in the result — if less than 15% of the image is opaque after the rebuild, something went wrong), log a warning and restore the original non-transparent logo. Phase 6 will catch rendering issues downstream.
+
+- **Very small logos.** If the input is under 100x100 pixels, skip the rebuild entirely. Small logos may have no clean corners to sample from. Phase 5 can style them with explicit background containers if needed.
+
+- **JPEG input.** Should not occur (Phase 1 step 4 saves as PNG), but if encountered, convert to RGBA as the first step of step 2 above.
+
+### Testing expectation
+
+The rebuild should be idempotent: running it on an already-transparent logo should exit at step 3 without changes. Running it on a logo that needs rebuilding should produce a clean RGBA result. Running it again on that result should exit at step 3 without further changes.
+
+---
+
 ## Version
 
 image-handling.md v0.7.0. Foundation file for Phase 3 photo pipeline. Referenced by Phase 4 (hero mode decision), Phase 5 (HTML generation), and Phase 6 (verification gates).
