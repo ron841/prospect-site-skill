@@ -137,6 +137,35 @@ Every line of generated copy is checked against this list during Phase 5 generat
 - "From start to finish" / "Above and beyond" / "Every step of the way"
 - "Around the clock" (use "24/7" only if literally true)
 
+### Banned credential and trust claims (conditional on profile.json)
+
+The following words and phrases must NEVER appear in generated output unless profile.json contains the specific credential, number, or issuing body that supports the claim.
+
+Agents will reach for these words to fill "confidence slots" in titles, hero copy, og:title, meta descriptions, and JSON-LD even when Phase 1/2 did not capture supporting data. Phase 6 check 3 (Banned output check) greps for each of these. Any hit without a corresponding profile.json field fails the build.
+
+Banned unless captured:
+
+    "Licensed"        requires profile.license_number
+    "Insured"         requires profile.insurance_carrier or insurance_note
+    "Bonded"          requires profile.bond_number or bond_note
+    "Certified"       requires profile.certifications[] (non-empty)
+    "Accredited"      requires profile.accreditations[] (non-empty)
+    "Award-winning"   requires profile.awards[] (non-empty)
+    "Award winning"   same — also banned without hyphen
+    "Trusted"         generic trust label — always banned standalone
+    "Premier"         generic superlative — always banned
+    "Leading"         generic superlative — always banned
+    "Top-rated"       requires review data that supports it
+    "Top rated"       same — also banned without hyphen
+    "Best in [area]"  always banned unless from quoted testimonial
+    "#1 in [area]"    always banned unless profile.ranking_source
+
+Agents must not paraphrase around this list. "Fully licensed" counts. "Licensed professionals" counts. "A licensed contractor" counts. The word "licensed" itself is the trigger. Same pattern applies to every other term — any sentence containing the banned root fails check 3 unless the supporting profile field exists.
+
+If the prospect's own website uses one of these claims, Phase 1 must capture the supporting data and store it in the appropriate profile.json field. Only then may the generated site repeat the claim. If Phase 1/2 cannot verify, the claim does not ship.
+
+Grandview F4 2026-04-16 context: agent-generated title read "Licensed Ocala Landscaping Since 1999" — "Licensed" was fabricated. Chad F3 2026-04-16 context: agent-generated hero copy read "124 five-star reviews" — the "124" was correct but the "five-star" was fabricated (actual rating 4.4/5). This list stops both patterns at the banned-phrase grep layer.
+
 ### CTA trailing-fragment hallucinations (HTML slop)
 
 Hallucinated structural elements that leak into generated HTML even when no template authorizes them. Claude Code pattern-matches on "this is a CTA section" and invents training-data-style fine-print, SMS opt-out copy, or secondary buttons that are not defined in `section-patterns.md` or `hero-patterns.md`. Bug 2 from A-1 Payless Septic flagship (2026-04-15). Every instance is slop.
