@@ -259,7 +259,25 @@ Steps:
 
 4. Save extracted data to `profile-draft.json` as you go.
 
-5. Report to Ron: pages crawled, services captured, testimonials captured (with name list), owner names, featured promotion, any gaps.
+5. **Broken internal link capture.** During Phase 2 crawl, track the HTTP status of every internal link followed. For any link that returns a 404 or 5xx status, record it. Add to `profile.json` as:
+
+   ```json
+   "brokenLinks": [
+     {
+       "source_page": "/",
+       "target": "/sod-services-ocala-fl/",
+       "status": 404
+     }
+   ]
+   ```
+
+   Broken internal links on the prospect's live site are direct "owner stopped paying attention" sales signals. Phase 8 must surface these in the done-report sales-ammunition section.
+
+   If `brokenLinks[]` is non-empty, include a summary line in the Phase 2 report to Ron: "N broken internal links captured (see profile.json.brokenLinks)."
+
+   Rationale (Grandview F4 2026-04-16): the prospect's homepage linked to `/sod-services-ocala-fl/`, which returned 404. A live, customer-facing broken link the owner had not noticed. Pure sales ammunition. Phase 2 must capture automatically; agents should not have to notice incidentally.
+
+6. Report to Ron: pages crawled, services captured, testimonials captured (with name list), owner names, featured promotion, any gaps.
 
 ## Phase 2.5 — Pre-migration SEO audit
 

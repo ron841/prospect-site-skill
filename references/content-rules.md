@@ -1099,6 +1099,24 @@ Before marking any generated page content complete, verify:
 
 ---
 
+## Sales-ammunition categories (Phase 8 done-report)
+
+Phase 8 done-report surfaces the following categories as sales talking points, populated from `profile.json` during the build:
+
+- Broken internal links (from Phase 2 broken-link capture step)
+- Stale copyright year in footer (from Phase 1 footer parse)
+- Stale "since [YEAR]" or "[N] years in business" claims where the stated duration is materially shorter than the actual duration
+- Missing JSON-LD schema (detected via Phase 1 HTML parse)
+- Plugin-artifact `og:image` (tracking pixels, placeholder images, 1x1 transparent GIFs)
+- Missing `tel:` link on phone numbers displayed as plain text
+- Missing physical address despite being a local business (PO Box only, or no address at all)
+- CMS age indicators (e.g., Elementor + WordPress of a certain vintage, Joomla/Drupal pre-modern versions)
+- Social presence gaps (e.g., Facebook-only for a visual business that should have Instagram)
+
+These are captured automatically during Phase 1 and Phase 2 and flow through `profile.json` to the Phase 8 report. Do not fabricate or speculate — only report what was verifiably captured.
+
+---
+
 ## Version
 
 content-rules.md v0.7.0. Synced with GRM_VOICE_SKILL.md v1.0 (March 22, 2026). When GRM_VOICE_SKILL.md is updated, this file must be manually re-synced for the universal rules and banned words list excerpt.
