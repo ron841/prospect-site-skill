@@ -194,6 +194,44 @@ Steps:
 
     Rationale (Grandview F4 2026-04-16): source logo was a GIF from WordPress with solid-white background. sharp conversion to PNG preserved the white fill as opaque. Combined with the footer-logo filter (removed in v0.7.3 #1), the result was an empty white rectangle in the dark footer. Transparent logos render correctly regardless of footer background color.
 
+4b. **Secondary brand mark detection.** While crawling images during Phase 1 step 3, flag any image that meets ALL of these criteria:
+
+    - Aspect ratio between 0.9:1 and 1.1:1 (near-square or round shape)
+    - Long edge between 150px and 600px
+    - Located in a CMS upload directory. Recognized path patterns: `/wp-content/uploads/`, `/uploads/`, `/media/`, `/assets/brand/`, `/sites/default/files/`, `/images/brand/`, or similar conventional CMS conventions
+    - NOT already identified as the primary logo in step 3
+    - NOT a stock photo or gallery image (heuristic: stock photos and gallery images are typically landscape or portrait; round-ratio images in CMS uploads are much more likely to be brand assets)
+
+    These are candidate secondary brand marks — typically round badges, founder portraits, agricultural or industry seals, certification logos, sub-brand marks, or specialty product marks.
+
+    Action for each candidate:
+
+    - Download to `assets/candidate-brand-marks/[original-filename]`
+    - Add an entry to `profile.json` under `secondaryMarkCandidates`:
+      ```json
+      [
+        {
+          "filename": "badge-farms.avif",
+          "source_url": "https://prospect.com/wp-content/uploads/...",
+          "dimensions": "396x396",
+          "source_path": "/wp-content/uploads/2025/09/...",
+          "proposed_use": null
+        }
+      ]
+      ```
+    - At the Phase 4 approval gate, present each candidate to Ron with the question: "Secondary brand mark detected. Use where?" Offer options:
+        * About page placement
+        * Specific service card icon
+        * Sub-page header overlay
+        * Specialty/farm/product page
+        * Skip (not a brand mark)
+
+    Populate the `proposed_use` field based on Ron's selection. Phase 5 reads `proposed_use` values during HTML generation.
+
+    Detailed spec in `references/image-handling.md` § "Secondary brand mark detection".
+
+    Rationale (Grandview F4 2026-04-16): the round "Grandview Farms" badge at `/wp-content/uploads/2025/09/024cf2_...avif` (396x396) was captured by Phase 1 step 3 as generic inline image `s28.avif`, never recognized as a secondary brand mark. The retrofit happened post-build at significant agent-hours cost. Phase 1 flagging prevents this on future builds.
+
 5. Run node-vibrant on `assets/logo.png`. Capture the six semantic swatches (Vibrant, DarkVibrant, LightVibrant, Muted, DarkMuted, LightMuted). Save to `profile-draft.json` under `brandPalette` with role mapping: Vibrant becomes `primary`, DarkVibrant becomes `darkPrimary`, LightVibrant becomes `accent`, Muted becomes `neutral`, LightMuted becomes `background`.
 
 6. Set `designChoices.heroBackground` from the warm/cool temperature of `brandPalette.primary`. Warm brands get cream (`#faf7f2`). Cool brands get cool-white (`#f4f7fa`). Neutral brands default to cream.

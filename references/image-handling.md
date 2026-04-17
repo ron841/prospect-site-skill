@@ -869,6 +869,75 @@ The rebuild should be idempotent: running it on an already-transparent logo shou
 
 ---
 
+## Secondary brand mark detection
+
+Referenced from SKILL.md Phase 1 step 4b.
+
+### Detection criteria
+
+An image crawled during Phase 1 qualifies as a secondary brand mark candidate when ALL of the following are true:
+
+1. **Aspect ratio.** Width divided by height falls between 0.9 and 1.1 inclusive. This captures round logos, square badges, and near-square seals. Wider or taller images are excluded — rectangular banner logos are already handled by primary logo detection.
+
+2. **Size.** The long edge of the image is between 150 pixels and 600 pixels inclusive. Below 150 is typically a favicon or icon spacer. Above 600 is typically a hero image or gallery photo.
+
+3. **Source path.** The image URL path contains one of these patterns (case-insensitive):
+
+   - `/wp-content/uploads/`
+   - `/uploads/`
+   - `/media/`
+   - `/assets/brand/`
+   - `/sites/default/files/`
+   - `/images/brand/`
+
+   These are conventional CMS upload directories where deliberately-uploaded brand assets live. Images from other paths (stock photo CDNs, theme asset directories, external hosting) are excluded.
+
+4. **Not primary logo.** The image must not be the file already identified as the primary logo in Phase 1 step 3.
+
+5. **Not a stock / gallery signature.** If the surrounding HTML context (parent element classes, alt text, or section heading) strongly suggests stock photography or a gallery (e.g., class names containing `gallery`, `portfolio`, `featured-image`), exclude the image even if the other criteria match.
+
+### profile.json schema for secondaryMarkCandidates[]
+
+Each candidate entry:
+
+```json
+{
+  "filename": "string",
+  "source_url": "string",
+  "dimensions": "WxH",
+  "source_path": "string",
+  "proposed_use": "string | null"
+}
+```
+
+Fields:
+
+- `filename` — local filename after download
+- `source_url` — full URL on the prospect's site
+- `dimensions` — `WxH` format (e.g., `396x396`)
+- `source_path` — URL path portion
+- `proposed_use` — populated at the Phase 4 gate
+
+`proposed_use` values recognized by Phase 5:
+
+- `about-page` — figure near founding/history copy
+- `service-card-icon` — replaces SVG icon on a specific service card (accompanied by a `target_service` field naming which service)
+- `sub-page-overlay` — circular overlay in sub-page hero (accompanied by a `target_subpage` field)
+- `specialty-section` — featured in a dedicated specialty block
+- `skip` — do not use — noted for completeness only
+
+### Phase 4 gate interaction
+
+When `secondaryMarkCandidates[]` is non-empty at the Phase 4 scoring and decision report, the report must include a "Secondary brand marks" subsection that shows each candidate's dimensions and source path, and prompts Ron for the `proposed_use` decision per candidate before the build proceeds.
+
+### Storage location
+
+Candidates are downloaded to: `assets/candidate-brand-marks/`
+
+This directory is separate from `assets/photos/` so that Phase 5 photo selection does not accidentally pull brand marks into photo galleries or hero slides.
+
+---
+
 ## Version
 
 image-handling.md v0.7.0. Foundation file for Phase 3 photo pipeline. Referenced by Phase 4 (hero mode decision), Phase 5 (HTML generation), and Phase 6 (verification gates).
