@@ -797,6 +797,10 @@ prospect-site v0.7.2, updated Wednesday April 16, 2026. Built on v0.5's foundati
 
 Phase 0 gains an eighth hard check: every prospect workspace must be git-initialized before Phase 1 begins. Workspaces accumulate HTML, photos, and profile data across phases; post-deploy hotfixes need rollback granularity below the file level. Also adds a "Post-deploy hotfix workflow" section codifying the commit-before-redeploy pattern used on F4 Grandview's NAP hotfix tonight. All six pre-v0.7.4 flagships (F1-F6) were retrofitted with initial commits on 2026-04-17; from this hotfix forward, every new build is tracked from the first byte captured.
 
+### v0.7.3 hotfix #10 — 2026-04-17 afternoon — Skip-link 8px visible dash fix
+
+Skip-link visible 8px dash at top of viewport fixed. Corrected CSS in `references/css-framework.md`: `top: -48px; height: 40px; padding: 10px 20px;` so the skip-link sits fully off-screen until keyboard focus pulls it into view. Shipped before F6 Oxford Lawn kickoff and validated clean on that build's first generation. Commit `b4591c8`.
+
 ### v0.7.3 — 2026-04-16 evening — "Grandview Patch"
 
 Evening session after F4 Grandview build. Nine atomic commits addressing bugs surfaced during the build and post-build review.
