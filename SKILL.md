@@ -3,7 +3,7 @@ name: prospect-site
 description: "Generate a custom multi-page preview website for a local home services contractor prospect from their live URL. Deeply crawls the prospect's real site, captures their brand data (owners, services, testimonials, credentials, colors, photos, promotions), scores their current web presence, picks a hero background mode from a data-driven decision tree, builds a multi-page site using the GRM house style and the GRM voice mapping (Closing Table for hero/promos/cards/stats, Saturday Morning for marquees/section headers, Front Porch for footer/About), runs automated quality gates, and deploys to Vercel. Use this skill whenever the user types /prospect-site followed by a business name and URL, or asks to build a prospect preview site for a local business they want to sell to."
 ---
 
-# Prospect Site Generator (v0.7.2)
+# Prospect Site Generator (v0.7.3)
 
 ## What this skill does
 
@@ -770,6 +770,26 @@ Ready for Ron to review on mobile. Next step: open the URL on your phone and run
 prospect-site v0.7.2, updated Wednesday April 16, 2026. Built on v0.5's foundation (heavily specified flagship 1 hero, Phase 2.5 SEO audit, Phase 5.5 GEO injection, Plant Street voice, CSS hygiene rules) plus Cowork's 21st.dev hero research (Glassmorphism Trust Hero as content layer, data-driven background modes), plus anthropics/skills progressive disclosure pattern, plus frontend-design anti-slop rules, plus Magic UI extracts for button and card enhancements, plus Aceternity pattern rebuilds in vanilla JS. Architectural antidote to v0.6's four-pattern collapse: one structural pattern, heavily specified, deterministic data-driven variation.
 
 ### Changelog
+
+### v0.7.3 — 2026-04-16 evening — "Grandview Patch"
+
+Evening session after F4 Grandview build. Nine atomic commits addressing bugs surfaced during the build and post-build review.
+
+Fixes:
+
+- **#1** Remove footer-logo brightness/invert filter — multi-color logos now render in native brand colors on dark footers (`e40f19b`)
+- **#2** Progressive-enhancement guard on `[data-reveal]` — sections default visible, only hide when JS confirms it will reveal (`f302d49`)
+- **#3** Banned credential and trust claims list — "Licensed", "Insured", "Certified", etc. require matching `profile.json` data or Phase 6 check 3 fails (`13b4189`)
+- **#4** Phase 6 check #19: schema-to-profile cross-reference (enumerated the already-spec'd `seo-geo.md` rule) (`074e936`)
+- **#5** Phase 6 check #20: unknown-field guard — `profile.json` `unknownFields[]` + anti-slop vocabulary map (`413ac25`)
+- **#6** Phase 1 step 4a: logo alpha channel check + chroma-key rebuild for no-alpha source logos (`b90b57a`)
+- **#7** Phase 1 step 4b: secondary brand mark detection — round-ratio CMS uploads flag as candidate marks at Phase 4 gate (`6d60a9f`)
+- **#8** Phase 2: broken internal link capture as sales ammunition (`9a1e9e9`)
+- **#9** This release commit — version bump, changelog, LESSONS augmentation, tag
+
+Validation plan: F5 build on Friday validates against a fresh prospect. If v0.7.3 has a bug, catch it in F5 and patch before F6.
+
+Retrofit required: F1, F2, F3, F4 need items #1 and #2 backported to their deployed CSS before Monday sales calls.
 
 v0.7.2 — Validated via F3 (Chad's Lawn and Landscape). Bug 2 (CTA trailing-fragment hallucination), Bug 4 (social metadata completeness), and Bug 5 (Phase 7 slug regeneration) confirmed fixed. Honeypot field added to contact form template.
 
