@@ -1,6 +1,6 @@
 # CSS Framework Reference
 
-Part of the prospect-site skill v0.7. Loaded by Phase 5 at the START of site generation, before any other CSS or HTML is written. Every other reference file depends on the tokens, variables, and primitives defined here.
+Part of the prospect-site skill v0.8. Loaded by Phase 5 at the START of site generation, before any other CSS or HTML is written. Every other reference file depends on the tokens, variables, and primitives defined here.
 
 This file owns:
 
@@ -129,7 +129,7 @@ Almost certainly never needs changing. Listed here so if it ever does need chang
 CONFIG.mobileBreakpoint = "980px"  // @media (max-width: 980px) for mobile overrides, per typography.md §7
 ```
 
-Single breakpoint for v0.7. Do not add a tablet breakpoint without updating every section pattern file at the same time.
+Single breakpoint for v0.8. Do not add a tablet breakpoint without updating every section pattern file at the same time.
 
 ### Animation durations
 
@@ -435,7 +435,7 @@ Per Appendix B, the font stack is universal and is not a tier-differentiation di
 |--------------|-----------|----------|
 | All tiers    | Inter     | system-ui |
 
-Inter is the body font for every tier. The heading font changes to signal tier, but the body stays consistent so reading experience is consistent. Do not mix body fonts across tiers — Inter is the only body font in v0.7.
+Inter is the body font for every tier. The heading font changes to signal tier, but the body stays consistent so reading experience is consistent. Do not mix body fonts across tiers — Inter is the only body font in v0.8.
 
 ### Banned fonts
 
@@ -1008,14 +1008,14 @@ Register-aware copy generation remains v0.8.1 scope per the 2026-04-20 Path A de
 
 ## Breakpoint system
 
-v0.7 uses a two-breakpoint mobile-first system:
+v0.8 uses a two-breakpoint mobile-first system:
 
 - **Mobile:** default styles, no media query needed
 - **Desktop:** `@media (min-width: 981px)` for any desktop-specific rule
 
 Or equivalently, the pattern used throughout the skill files is mobile overrides via `@media (max-width: 980px)` after desktop defaults. Both patterns produce the same result. Pick one and stick with it per file.
 
-There is no separate tablet breakpoint in v0.7. The 981px break handles iPad portrait (768px → mobile layout) and iPad landscape (1024px → desktop layout) correctly for every section pattern. If a specific section needs tablet-specific treatment in a later version, add it there, not globally.
+There is no separate tablet breakpoint in v0.8. The 981px break handles iPad portrait (768px → mobile layout) and iPad landscape (1024px → desktop layout) correctly for every section pattern. If a specific section needs tablet-specific treatment in a later version, add it there, not globally.
 
 ### Breakpoint rationale
 
@@ -1042,7 +1042,7 @@ All containers are centered with `margin: 0 auto` and have side padding of `24px
 
 ## Global reset and base styles
 
-Minimal reset, not a full Normalize.css. Only the rules we actually need for v0.7.
+Minimal reset, not a full Normalize.css. Only the rules we actually need for v0.8.
 
 ```css
 *, *::before, *::after {
@@ -1127,7 +1127,7 @@ ul, ol {
 
 ### Why this minimal reset
 
-Full resets like Normalize.css or Tailwind Preflight add dozens of rules we don't need and make the generated CSS harder to read when Ron or a future developer wants to understand what's happening. The rules above handle the cases v0.7 actually hits: box-sizing for layout predictability, margin reset for headings and paragraphs, image defaults, button and form element font inheritance, and a global respect for reduced-motion.
+Full resets like Normalize.css or Tailwind Preflight add dozens of rules we don't need and make the generated CSS harder to read when Ron or a future developer wants to understand what's happening. The rules above handle the cases v0.8 actually hits: box-sizing for layout predictability, margin reset for headings and paragraphs, image defaults, button and form element font inheritance, and a global respect for reduced-motion.
 
 ---
 
@@ -1386,7 +1386,7 @@ These rules live in the JS primitives below.
 
 ## Vanilla JavaScript animation toolkit
 
-All animation and interactivity for v0.7 sites uses vanilla JavaScript. No React. No Vue. No jQuery. No animation libraries. The primitives below are everything the generated sites need.
+All animation and interactivity for v0.8 sites uses vanilla JavaScript. No React. No Vue. No jQuery. No animation libraries. The primitives below are everything the generated sites need.
 
 Each primitive is a named function that Phase 5 includes in `script.js` only if the build needs it. A build with no before/after gallery omits the `beforeAfterCompare` function entirely.
 
@@ -1480,7 +1480,7 @@ function crossfadeSlideshow(containerSelector, interval = 6000) {
 - Default interval 6000ms matches the hero spec
 - Early returns if no container or fewer than 2 slides
 - Reduced motion shows first slide only (no cycling)
-- No unmount or cleanup logic because v0.7 sites are static HTML without SPA navigation
+- No unmount or cleanup logic because v0.8 sites are static HTML without SPA navigation
 
 ### Primitive 3: parallaxScroll
 
@@ -1989,7 +1989,7 @@ Phase 5 generates this block dynamically based on what sections and hero mode th
 
 ## Reduced motion handling summary
 
-Every animation in v0.7 respects `prefers-reduced-motion: reduce`. The handling strategy varies by animation type:
+Every animation in v0.8 respects `prefers-reduced-motion: reduce`. The handling strategy varies by animation type:
 
 | Animation               | Reduced motion behavior |
 |-------------------------|------------------------|
@@ -2009,7 +2009,7 @@ The global CSS reset handles most CSS-based animations through the `animation-du
 
 ## Performance targets
 
-v0.7 sites must hit these Lighthouse mobile scores for Phase 6 to pass:
+v0.8 sites must hit these Lighthouse mobile scores for Phase 6 to pass:
 
 - **LCP (Largest Contentful Paint):** under 2.5 seconds
 - **Performance score:** 85 or higher
@@ -2039,7 +2039,7 @@ If a build fails the LCP target, the most likely cause is a hero background imag
 - Do not introduce a new CSS custom property without adding it to this file and following the naming pattern.
 - Do not include JS primitives for sections that aren't in the build (e.g., don't include `beforeAfterCompare` when there's no before/after gallery).
 - Do not skip reduced-motion handling on a new animation. Every animation needs a reduced-motion path.
-- Do not use a tablet breakpoint. v0.7 is mobile-first with a single 981px break.
+- Do not use a tablet breakpoint. v0.8 is mobile-first with a single 981px break.
 - Do not load multiple heading fonts. Pick one per tier.
 - Do not use `position: sticky` for the nav. Use `position: fixed`.
 - Do not hardcode `rgba(43, 76, 159, 0.15)`. Use `rgba(var(--color-primary-rgb), 0.15)`.
@@ -2048,4 +2048,4 @@ If a build fails the LCP target, the most likely cause is a hero background imag
 
 ## Version
 
-css-framework.md v0.7.0, foundation file for prospect-site skill v0.7. Every other reference file depends on this one.
+css-framework.md v0.8, foundation file for prospect-site skill v0.8. Every other reference file depends on this one.
