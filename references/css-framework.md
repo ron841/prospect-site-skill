@@ -786,9 +786,9 @@ Register-aware parameter selection happens at the container level per the 2026-0
 
 ## StatRow primitive
 
-A skill-level typographic primitive that renders a contrast pair of display numerals + mono labels — §5's "the contrast isn't decoration, it's the whole content of the stat row." Consolidation source: typography.md §5. Register ownership: voiceMap.md §2a (Closing Table). Registered as part of the v0.8 Wave 2 primitive rollout alongside SectionOpener.
+A skill-level typographic primitive that renders a contrast pair of display numerals + mono labels — §5's "the contrast isn't decoration, it's the whole content of the stat row." Consolidation source: typography.md §5 plus Design's 2026-04-20 authorial pass. Register ownership: voiceMap.md §2a (Closing Table). Registered as part of the v0.8 Wave 2 primitive rollout alongside SectionOpener.
 
-F5's `.hero-stats` + `.hero-stat-num` + `.hero-stat-label` trio is the canonical reference implementation. The primitive replaces that instance-level pattern with one role-named container and one numeral-scale axis.
+F5's `.hero-stats` + `.hero-stat-num` + `.hero-stat-label` trio is the canonical reference implementation. The primitive replaces that instance-level pattern with one role-named container and one optional compressed-variant modifier.
 
 ### Role, alias, override — naming contract
 
@@ -800,14 +800,16 @@ Per typography.md §0, StatRow follows the role/alias/override layering establis
 
 ### Parameters
 
-Per typography.md §5, StatRow is parameterized on one axis at the skill level:
+Per typography.md §5 and Design's 2026-04-20 authorial pass, StatRow carries one canonical scale with a compressed variant. Not a multi-tier progression.
 
-- **Numeral scale** — `48` (canonical per §5), `40` (midrange), `36` (minimum per §5's 4× ratio rule against the 9px label floor)
+- **Numeral scale** — canonical 48px (implicit on the base `.statrow`) with a compressed variant `.statrow--numeral-36` for composition-constrained contexts
+
+Per Design: *"StatRow has one scale (48px) with a compressed variant (36px). 48 is editorial default. 36 is the constrained variant — used when a composition can't hold the full cadence. There's no legitimate authorial reason to select [midrange]."* The primitive exposes one variant modifier, not a tier enumeration. Canonical is implicit on the base class; no `.statrow--numeral-48` is authored.
 
 Non-parameters (authorial fixed values):
 
 - **Label scale** — fixed at 9px per §5's "label is already at legibility floor." Not a modifier.
-- **Column count** — hardcoded at 3-col desktop, 2-col tablet, 1-col phone per scope doc Core #5. §5 uses 3-col as the canonical example; no authorial evidence of alternate column counts in §5 or F5. Future extension requires authorial promotion in typography.md before a `--cols-N` axis is added here.
+- **Column count** — hardcoded 3-col through desktop and tablet, 1-col only at ≤540px. Per Design's 2026-04-20 rhythm reasoning: StatRow is a three-beat stanza read left-to-right; the 3-col grid holds from desktop through tablet. F5 precedent matches; earlier "3/2/1" scope-doc text was unauthored and is superseded.
 - **Register** — Closing Table per voiceMap.md §2a. StatRow always carries the Closing Table typographic signature; register is not parametrized.
 
 ### CSS implementation
@@ -816,19 +818,20 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
 
 ```css
 /* =====================================================================
-   StatRow primitive (typography.md §5)
+   StatRow primitive (typography.md §5 + Design 2026-04-20 authorial pass)
 
-   Display numerals + mono labels in a contrast pair. 4× ratio rule
-   enforced at CSS comment level and at generation-time contract
-   (numeral scale must be ≥4× label scale; label fixed at 9px).
-   Numeral weight 400 default per §5 — bold numerals at display scale
-   feel like pricing tables, not editorial. Stylistic-set signature
-   (ss01 + ss02) and opsz pinning inherited from typography.md §8 +
-   Appendix B (universal across tiers per 6ec0f6d).
+   Display numerals + mono labels in a contrast pair. Two-scale model:
+   canonical (48px, implicit on base .statrow) and compressed (36px,
+   via .statrow--numeral-36 override). 4× ratio rule satisfied at both
+   scales against the 9px label floor: 48/9=5.33×, 36/9=4.00×. Mobile
+   values preserve the two-tier distinction: canonical → 42 at ≤540px,
+   compressed → 36 (holds). Numeral weight 400 default per §5.
+   Stylistic-set signature (ss01 + ss02) and opsz pinning inherited
+   from typography.md §8 + Appendix B (universal per 6ec0f6d).
    ===================================================================== */
 
 /* Role base — Closing Table register owned (voiceMap.md §2a).
-   3-col desktop grid; responsive collapse defined below.
+   3-col grid holds through desktop and tablet per Design 2026-04-20.
    Hairline top-border echoes the meta-grid rhythm per §5. */
 .statrow {
   display: grid;
@@ -851,12 +854,16 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
   padding-left: 0;
 }
 
+/* Numeral — canonical 48px scale applies to the base .statrow (implicit).
+   Compressed variant overrides via .statrow--numeral-36 below. */
 .statrow__num {
   font-family: var(--font-heading);
+  font-size: 48px;                        /* canonical; compressed overrides */
   font-weight: 400;                       /* §5: numeral weight 400 or lighter */
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--color-dark-primary);
+  font-variation-settings: 'opsz' 48;
   margin: 0;
 }
 
@@ -870,58 +877,36 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
   margin-top: 10px;
 }
 
-/* ----- Axis 1: Numeral scale (§5 4× ratio rule) -----
-   §5 requires numeral scale ≥4× label scale. Label is fixed at 9px.
-   Minimum valid numeral is 36px (4× 9px = 36). Modifiers below all
-   satisfy the ratio: 48/9=5.33×, 40/9=4.44×, 36/9=4.00×. Phase 5
-   generation MUST reject any StatRow that would violate the ratio
-   (e.g., a custom scale <36px against the 9px label). opsz is pinned
-   per rendered size per §8. */
-
-.statrow--numeral-48 .statrow__num {
-  font-size: 48px;
-  font-variation-settings: 'opsz' 48;
-}
-
-.statrow--numeral-40 .statrow__num {
-  font-size: 40px;
-  font-variation-settings: 'opsz' 40;
-}
+/* ----- Numeral-scale variant: compressed -----
+   Used when composition constraints — narrow column, secondary section,
+   tight vertical rhythm — demand a tighter cadence than canonical 48px
+   allows. Per Design 2026-04-20: compressed is a variant of the canonical
+   scale, not a "small" tier. 36/9 = 4.00× exactly, at §5's 4× floor.
+   opsz pinned per §8. */
 
 .statrow--numeral-36 .statrow__num {
-  font-size: 36px;                        /* minimum per 4× rule */
+  font-size: 36px;
   font-variation-settings: 'opsz' 36;
 }
 
-/* ----- Mobile breakpoints (typography.md §7: 980 tablet, 540 phone) -----
-   Tablet (≤980px): 3-col → 2-col grid. Divider logic adapts for
-   2-col wrapping via :nth-child(odd) to reset border-left on
-   column-1 items regardless of DOM position.
-   Phone (≤540px): 2-col → 1-col stack. Vertical dividers become
-   horizontal between stacked items. Numeral drops to 36px per §5's
-   mobile range (36–42px) regardless of desktop modifier; label stays
-   at 9px per §5's "don't shrink the label to maintain proportion."
+/* ----- Mobile breakpoint (typography.md §7: 540 phone) -----
+   Column stack: 3-col → 1-col at ≤540px. Dividers flip from vertical
+   to horizontal. Numeral scales per-variant at the stack breakpoint:
+   canonical (48 desktop) → 42 phone per §5's mobile-range ceiling;
+   compressed (36 desktop) → 36 phone (already at §5's floor, holds).
+   Per-variant mobile preserves the two-tier intent at the breakpoint
+   where hierarchy signals work hardest (Design 2026-04-20).
 
-   Mobile numeral rule placed after modifier rules for source-order
-   precedence at matching specificity (.statrow .statrow__num equals
-   .statrow--numeral-N .statrow__num). Do not reorder. */
-
-@media (max-width: 980px) {
-  .statrow {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .statrow__item:nth-child(odd) {
-    border-left: 0;
-    padding-left: 0;
-  }
-}
+   Specificity resolves the cascade: .statrow__num = (0,1,0);
+   .statrow--numeral-36 .statrow__num = (0,2,0). Compressed wins by
+   specificity, not by source order, both inside and outside the
+   media query. */
 
 @media (max-width: 540px) {
   .statrow {
     grid-template-columns: 1fr;
   }
-  .statrow__item,
-  .statrow__item:nth-child(odd) {
+  .statrow__item {
     border-left: 0;
     border-top: 1px solid var(--color-border);
     padding: 12px 0;
@@ -930,7 +915,13 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
     border-top: 0;
     padding-top: 0;
   }
-  .statrow .statrow__num {
+  /* Canonical mobile — 42px per §5's mobile-range ceiling (Design 2026-04-20) */
+  .statrow__num {
+    font-size: 42px;
+    font-variation-settings: 'opsz' 42;
+  }
+  /* Compressed mobile — holds at 36px (already at §5's floor) */
+  .statrow--numeral-36 .statrow__num {
     font-size: 36px;
     font-variation-settings: 'opsz' 36;
   }
@@ -943,26 +934,26 @@ Per typography.md §5: "Numeral scale must be ≥4× the label scale. At 48px / 
 
 The rule is a contract between numeral scale and label scale. CSS cannot programmatically enforce a cross-class ratio, so enforcement is layered:
 
-1. **CSS level (defense in depth):** Modifier values authored in this primitive all satisfy 4× against the 9px label (48/9=5.33×, 40/9=4.44×, 36/9=4.00×).
-2. **Generation-time contract (primary):** Phase 5 MUST reject any StatRow instance that would violate the ratio. Custom numeral scales outside the authored modifiers require authorial extension in typography.md §5 before the CSS primitive accepts them.
+1. **CSS level (defense in depth):** Both authored scales satisfy 4× against the 9px label — canonical 48/9=5.33×, compressed 36/9=4.00×. Mobile values likewise satisfy: canonical 42/9=4.67×, compressed 36/9=4.00×.
+2. **Generation-time contract (primary):** Phase 5 MUST reject any StatRow instance that would violate the ratio. Custom numeral scales outside the authored canonical/compressed pair require authorial extension in typography.md §5 before the CSS primitive accepts them.
 
 Same defense-in-depth pattern as SectionOpener's eyebrow-axis gating (816f58a): cascade-level enforcement where possible, generation-time contract primary.
 
 ### Column-count behavior
 
-Hardcoded 3-col desktop → 2-col tablet (≤980px) → 1-col phone (≤540px). Per scope doc Core #5 and typography.md §7 breakpoint pair. Not parametrized.
+Hardcoded 3-col through desktop and tablet, 1-col at ≤540px. Per Design's 2026-04-20 authorial pass and F5 precedent. Not parametrized.
+
+Design's rhythm reasoning: *"StatRow at 3-col is a line — three beats, read left-to-right, scanned as a stanza. Break the line at tablet into 2+1 and you've invented a new layout — a broken stanza where the third beat hangs alone. 1+1+1 at phone is fine; the eye already expects vertical at phone. 2+1 at tablet is the worst of both — neither line nor stack. Tablet width has the horizontal room to hold three beats. Let it."*
 
 §5 authors the 3-col canonical pattern but does not enumerate alternate column counts. Adding a `--cols-N` modifier axis is deferred to future authorial extension. 4-col, 6-col, or other layouts would require authorial promotion in typography.md before the primitive accepts them.
-
-**F5 precedent divergence:** F5's `.hero-stats` keeps 3-col from 541px through 980px (no 2-col tablet stage). This primitive follows scope doc Core #5's 3/2/1 spec rather than F5 precedent — scope doc authority over F5 instance precedent. Flagged for Wave 2 close.
 
 ### F5 instance as canonical example
 
 Per typography.md §4's "F5 instances (canonical examples)" caveat (applies to all primitives): these are reference implementations, not skill-level enumerations. Future brands may produce different instance counts from the same parameter grid.
 
-| F5 semantic alias | numeral scale | column count | voice-map     |
-|-------------------|---------------|--------------|---------------|
-| hero-stats        | numeral-48    | 3-col        | closing-table |
+| F5 semantic alias | numeral scale        | column behavior         | voice-map     |
+|-------------------|----------------------|-------------------------|---------------|
+| hero-stats        | canonical (implicit) | 3-col → 1-col at ≤540px | closing-table |
 
 F5 ships one StatRow instance (the hero stat row). Additional instances (service-tier stats, inline-band stats) are Wave 3 composition scope, not current F5 state.
 
@@ -970,11 +961,11 @@ F5 ships one StatRow instance (the hero stat row). Additional instances (service
 
 Per voiceMap.md §8 and voiceMap.md §2a (Closing Table register owns StatRow), every generated StatRow instance MUST be preceded by a voice-map HTML comment. Voice-map value is always `closing-table` for StatRow — StatRow is a canonical Closing Table instance per §2a, not register-parametrized.
 
-Markup contract:
+Markup contract (canonical, implicit scale):
 
 ```html
 <!-- voice-map: closing-table -->
-<section class="statrow statrow--numeral-48">
+<section class="statrow">
   <div class="statrow__item">
     <div class="statrow__num">36</div>
     <div class="statrow__label">Label 1</div>
@@ -990,16 +981,25 @@ Markup contract:
 </section>
 ```
 
+Compressed variant — add `.statrow--numeral-36` to the container class list when composition constraints demand the tighter cadence:
+
+```html
+<!-- voice-map: closing-table -->
+<section class="statrow statrow--numeral-36">
+  ...
+</section>
+```
+
 The comment is mandatory at generation time. Phase 5 MUST emit it when rendering any StatRow instance. Phase 5 enforcement (grep verification that every `.statrow` container is preceded by a `<!-- voice-map: closing-table -->` comment) is a Wave 4 gate concern, not a commit-time rule.
 
 ### Phase 5 generation note
 
-When Phase 5 emits a StatRow instance, it selects the numeral-scale modifier based on section context. The hero stat row uses `--numeral-48` per F5 precedent. Non-hero stat rows (service tier summaries, inline stat bands — Wave 3 composition scope) use `--numeral-40` or `--numeral-36` depending on section density.
+When Phase 5 emits a StatRow instance, it selects the scale by section context. The hero stat row uses the canonical scale (implicit — base `.statrow` alone, no variant modifier) per F5 precedent. Non-hero stat rows (service tier summaries, inline stat bands — Wave 3 composition scope) add `.statrow--numeral-36` when composition constraints demand compression. No `.statrow--numeral-48` class is emitted; canonical is implicit.
 
 Generation constraints Phase 5 MUST enforce:
 
-1. **4× ratio rule (§5):** reject any StatRow whose numeral-scale modifier would resolve to a value <36px against the fixed 9px label. Current modifiers (48, 40, 36) all satisfy; custom scales outside this set require authorial extension.
-2. **Column-count + content:** at desktop 3-col, a StatRow with fewer than 3 stats produces empty columns. Generation should author exactly 3 stats per row until a future `--cols-N` axis lands.
+1. **4× ratio rule (§5):** both authored scales satisfy the ratio. Custom scales outside canonical/compressed require authorial extension in typography.md §5.
+2. **Column-count + content:** at 3-col, a StatRow with fewer than 3 stats produces empty columns. Generation should author exactly 3 stats per row until a future `--cols-N` axis lands.
 3. **Register invariance:** voice-map comment is always `closing-table`. StatRow is not a register-parametrized primitive.
 
 Register-aware copy generation remains v0.8.1 scope per the 2026-04-20 Path A decision; the voice-map comment reserves the signal.
