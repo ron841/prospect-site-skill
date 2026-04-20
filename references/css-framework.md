@@ -787,15 +787,15 @@ Register-aware parameter selection happens at the container level per the 2026-0
 v0.7 uses a two-breakpoint mobile-first system:
 
 - **Mobile:** default styles, no media query needed
-- **Desktop:** `@media (min-width: 900px)` for any desktop-specific rule
+- **Desktop:** `@media (min-width: 981px)` for any desktop-specific rule
 
 Or equivalently, the pattern used throughout the skill files is mobile overrides via `@media (max-width: 980px)` after desktop defaults. Both patterns produce the same result. Pick one and stick with it per file.
 
-There is no separate tablet breakpoint in v0.7. The 900px break handles iPad portrait (768px → mobile layout) and iPad landscape (1024px → desktop layout) correctly for every section pattern. If a specific section needs tablet-specific treatment in a later version, add it there, not globally.
+There is no separate tablet breakpoint in v0.7. The 981px break handles iPad portrait (768px → mobile layout) and iPad landscape (1024px → desktop layout) correctly for every section pattern. If a specific section needs tablet-specific treatment in a later version, add it there, not globally.
 
 ### Breakpoint rationale
 
-- **900px:** Chosen because it falls between iPad portrait (768px) and iPad landscape (1024px), so iPads flip layouts on rotation without an awkward in-between state. Also comfortably above the widest common phone (iPhone Pro Max at 430px) with room to spare.
+- **981px:** Chosen because it falls between iPad portrait (768px) and iPad landscape (1024px), so iPads flip layouts on rotation without an awkward in-between state. Also comfortably above the widest common phone (iPhone Pro Max at 430px) with room to spare.
 
 ### Container widths
 
@@ -1268,7 +1268,7 @@ function parallaxScroll(selector, speed) {
   if (!elements.length) return;
 
   // Disable on mobile (performance and feel)
-  if (window.innerWidth < 900) return;
+  if (window.innerWidth < 981) return;
 
   // Respect reduced motion
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1300,7 +1300,7 @@ function parallaxScroll(selector, speed) {
 **Key points:**
 - Uses `requestAnimationFrame` throttling via the `ticking` flag to avoid running update on every scroll event
 - Passive scroll listener for performance
-- Disabled below 900px because parallax on small viewports feels janky and hurts performance
+- Disabled below 981px because parallax on small viewports feels janky and hurts performance
 - `translate3d` triggers GPU compositing for smooth motion
 - Two rows moving at opposite speeds (0.3 and -0.2) creates the depth illusion
 - Negative speed means the element moves against the scroll direction
@@ -1815,7 +1815,7 @@ If a build fails the LCP target, the most likely cause is a hero background imag
 - Do not introduce a new CSS custom property without adding it to this file and following the naming pattern.
 - Do not include JS primitives for sections that aren't in the build (e.g., don't include `beforeAfterCompare` when there's no before/after gallery).
 - Do not skip reduced-motion handling on a new animation. Every animation needs a reduced-motion path.
-- Do not use a tablet breakpoint. v0.7 is mobile-first with a single 900px break.
+- Do not use a tablet breakpoint. v0.7 is mobile-first with a single 981px break.
 - Do not load multiple heading fonts. Pick one per tier.
 - Do not use `position: sticky` for the nav. Use `position: fixed`.
 - Do not hardcode `rgba(43, 76, 159, 0.15)`. Use `rgba(var(--color-primary-rgb), 0.15)`.
