@@ -55,21 +55,21 @@ CONFIG.fonts = {
     body: "Inter",
     bodyFallback: "system-ui, -apple-system, sans-serif",
     // Google Fonts URL path segment:
-    googleFontsPath: "Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500"
+    googleFontsPath: "Fraunces:opsz,wght@9..144,300..800&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500"
   },
   professional: {
     heading: "Space Grotesk",
     headingFallback: "\"Inter\", system-ui, sans-serif",
     body: "Inter",
     bodyFallback: "system-ui, -apple-system, sans-serif",
-    googleFontsPath: "Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500"
+    googleFontsPath: "Space+Grotesk:wght@300;500;600;700&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500"
   },
   standard: {
     heading: "Inter",
     headingFallback: "system-ui, -apple-system, sans-serif",
     body: "Inter",
     bodyFallback: "system-ui, -apple-system, sans-serif",
-    googleFontsPath: "Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500"
+    googleFontsPath: "Inter:wght@300..800&family=JetBrains+Mono:wght@400;500"
   }
 }
 ```
