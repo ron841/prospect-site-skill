@@ -48,6 +48,12 @@ Phase 5 reads these values during site generation and writes them into the final
 ### Tier font pairs
 
 ```
+// Per typography.md Appendix B: Fraunces + Inter + JetBrains Mono is
+// universal across tiers. Tier entries below are structurally identical
+// by design — the tier-indexed architecture is preserved for future
+// per-tier weight tuning, but font identity is not a tier-differentiation
+// dimension. --font-mono lives at :root (tier-invariant per 076ffec), so
+// only heading and body appear in these tier entries.
 CONFIG.fonts = {
   premium: {
     heading: "Fraunces",
@@ -55,32 +61,30 @@ CONFIG.fonts = {
     body: "Inter",
     bodyFallback: "system-ui, -apple-system, sans-serif",
     // Google Fonts URL path segment:
-    googleFontsPath: "Fraunces:opsz,wght@9..144,300..800&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500"
+    googleFontsPath: "Fraunces:opsz,wght@9..144,300..800&family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;500"
   },
   professional: {
-    heading: "Space Grotesk",
-    headingFallback: "\"Inter\", system-ui, sans-serif",
+    heading: "Fraunces",
+    headingFallback: "\"Playfair Display\", Georgia, serif",
     body: "Inter",
     bodyFallback: "system-ui, -apple-system, sans-serif",
-    googleFontsPath: "Space+Grotesk:wght@300;500;600;700&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500"
+    googleFontsPath: "Fraunces:opsz,wght@9..144,300..800&family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;500"
   },
   standard: {
-    heading: "Inter",
-    headingFallback: "system-ui, -apple-system, sans-serif",
+    heading: "Fraunces",
+    headingFallback: "\"Playfair Display\", Georgia, serif",
     body: "Inter",
     bodyFallback: "system-ui, -apple-system, sans-serif",
-    googleFontsPath: "Inter:wght@300..800&family=JetBrains+Mono:wght@400;500"
+    googleFontsPath: "Fraunces:opsz,wght@9..144,300..800&family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;500"
   }
 }
 ```
 
 **When to change these:** after running a real calibration build (T&F Friday morning or any subsequent flagship) and deciding the tier font does not match the visual result on the screen. Edit the relevant `heading` value here, re-run the build, check the result. One-line change.
 
-**Alternate picks, pre-vetted for swap-in:**
+**On alternate font selections.** Per typography.md Appendix B, Fraunces is universal across tiers and cannot be swapped without losing the GRM typographic signature (ss01 + ss02 + opsz-pinned Fraunces). Historical alternate picks (Playfair Display, Merriweather, DM Sans, Manrope, etc.) are not tier fallbacks — they are wrong-stack substitutions that lose the signature even when they look close. A tier that drops Fraunces is not a GRM tier.
 
-- Premium: swap `"Fraunces"` to `"Playfair Display"` for a more classical editorial feel, or `"Merriweather"` for a warmer, less contrasty serif
-- Professional: swap `"Space Grotesk"` to `"DM Sans"` for a cleaner, more neutral geometric sans, or `"Manrope"` for something softer
-- Standard: Inter is the right baseline and should not be swapped unless there is a strong reason
+If a calibration build surfaces that Fraunces does not render well for a specific prospect, that is a visual-result concern worth raising with Design — not a per-tier config override. Tier calibration lives in palette complexity, section density, animation layer, and photographic treatment per Appendix B.
 
 The full approved list and banned list live in `anti-slop-rules.md`. Never pick a font outside the approved list without updating that file first.
 
@@ -411,22 +415,19 @@ Phase 5 reads `CONFIG.fonts.[tier].googleFontsPath` per the tier decision from P
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=[googleFontsPath-value]&display=swap">
 ```
 
-The path value is used verbatim (SKILL.md:580) — no placeholder substitution. Weights are authored per-tier in CONFIG: variable-axis fonts (Fraunces, Inter) use continuous ranges (`wght@300..800`); non-variable fonts (Space Grotesk) use discrete stops. Weight 300 at the low end is required per typography.md §2's italic-em rule. Don't load weights primitives don't use (typography.md §8).
+The path value is used verbatim (SKILL.md:580) — no placeholder substitution. The three-font stack (Fraunces, Inter, JetBrains Mono) is universal across tiers per typography.md Appendix B; all three tier `googleFontsPath` values resolve to the same path. Fraunces and Inter use continuous variable-axis ranges (`wght@300..800`); JetBrains Mono uses discrete stops (`wght@400;500`). Weight 300 at the low end is required per typography.md §2's italic-em rule. Don't load weights primitives don't use (typography.md §8).
 
 Fraunces variable paths include the opsz axis (`opsz,wght@9..144,300..800`). Primitives pin opsz per rendered size via `font-variation-settings: 'opsz' [N]` per §8's opsz discipline.
 
 `<link rel="preload">` is NOT emitted. Preconnect + stylesheet with `display=swap` is the pattern — matches Google Fonts' recommended minimum. F5 and every Phase 5 build emit this three-link shape.
 
-### Approved heading fonts by tier
+### Approved heading font — universal
 
-| Tier         | Primary heading font | Fallback | Rationale |
-|--------------|---------------------|----------|-----------|
-| Premium      | Fraunces            | Playfair Display | Modern serif with optical sizing and variable weights. Reads like a magazine. |
-| Premium (alt)| Playfair Display    | Merriweather | Classic high-contrast serif when Fraunces feels too editorial. |
-| Professional | Space Grotesk       | Inter    | Geometric sans with personality. Feels crafted, not generic. |
-| Standard     | Inter               | system-ui| Highly legible, boring in a good way. Loads fast. |
+| Tier         | Primary heading font | Fallback                         | Rationale |
+|--------------|---------------------|----------------------------------|-----------|
+| All tiers    | Fraunces            | Playfair Display, Georgia, serif | Modern serif with optical sizing and variable weights. Universal per typography.md Appendix B — the typographic signature (ss01 + ss02 + opsz pinning) requires Fraunces across all tiers. |
 
-The default for Professional is Space Grotesk. Ron can override at the approval gate.
+Per Appendix B, the font stack is universal and is not a tier-differentiation dimension. Tier variation lives in palette complexity, section density, animation layer, and photographic treatment.
 
 ### Approved body fonts by tier
 
@@ -992,18 +993,18 @@ The `.tier-premium` class is applied to the `<html>` element in Phase 5 when tie
 
 ```css
 :root.tier-professional {
-  --font-heading: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-heading: "Fraunces", "Playfair Display", Georgia, serif;
   /* All other tokens use the base values */
 }
 ```
 
-Professional is the default baseline — most tokens are already correct for Professional in the base `:root` block. Only the heading font changes.
+Professional is the default baseline — most tokens are already correct for Professional in the base `:root` block. The heading font resolves to Fraunces per typography.md Appendix B (universal across tiers).
 
 ### Standard tier (0-39 score)
 
 ```css
 :root.tier-standard {
-  --font-heading: "Inter", system-ui, -apple-system, sans-serif;
+  --font-heading: "Fraunces", "Playfair Display", Georgia, serif;
   --text-hero: 56px;
   --text-hero-default: 44px;
   --text-section-title: 36px;
@@ -1024,7 +1025,7 @@ Professional is the default baseline — most tokens are already correct for Pro
 }
 ```
 
-Standard uses Inter for both heading and body (same as fallback), smaller type scale for speed and hierarchy clarity, and compressed vertical rhythm.
+Standard uses Fraunces heading + Inter body per typography.md Appendix B (universal stack), with a smaller type scale for speed and hierarchy clarity and compressed vertical rhythm. Typography identity matches Premium and Professional; tier differentiation lives in palette, density, motion, and photographic treatment per Appendix B.
 
 ### Tier override application order
 
