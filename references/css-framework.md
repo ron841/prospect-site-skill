@@ -401,22 +401,21 @@ If any ratio fails, Phase 6 flags the build and suggests either darkening the ov
 
 ### Font loading strategy
 
-Google Fonts is the only approved font source for v0.7. Self-hosting fonts is deferred to v0.8 because the flagship builds do not need the extra 30-40ms of first-paint improvement that self-hosting gives, and because Google Fonts handles font-display and variable font loading correctly out of the box.
+Google Fonts is the approved font source. Self-hosting is deferred — Google Fonts handles `font-display` and variable-font loading correctly.
 
-Add these to the `<head>` of every generated HTML file:
+Phase 5 reads `CONFIG.fonts.[tier].googleFontsPath` per the tier decision from Phase 4 and emits a three-link block in `<head>`:
 
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=[HEADING_FONT]:wght@400;600;700;800&family=[BODY_FONT]:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=[HEADING_FONT]:wght@400;600;700;800&family=[BODY_FONT]:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=[googleFontsPath-value]&display=swap">
 ```
 
-- `preconnect` to both `fonts.googleapis.com` and `fonts.gstatic.com` (the gstatic one must include `crossorigin`)
-- `preload` the stylesheet so the font starts downloading earlier
-- `display=swap` so text renders in fallback immediately and swaps to the web font when loaded
+The path value is used verbatim (SKILL.md:580) — no placeholder substitution. Weights are authored per-tier in CONFIG: variable-axis fonts (Fraunces, Inter) use continuous ranges (`wght@300..800`); non-variable fonts (Space Grotesk) use discrete stops. Weight 300 at the low end is required per typography.md §2's italic-em rule. Don't load weights primitives don't use (typography.md §8).
 
-Phase 5 substitutes `[HEADING_FONT]` and `[BODY_FONT]` with URL-encoded font family names based on the tier decision from Phase 4.
+Fraunces variable paths include the opsz axis (`opsz,wght@9..144,300..800`). Primitives pin opsz per rendered size via `font-variation-settings: 'opsz' [N]` per §8's opsz discipline.
+
+`<link rel="preload">` is NOT emitted. Preconnect + stylesheet with `display=swap` is the pattern — matches Google Fonts' recommended minimum. F5 and every Phase 5 build emit this three-link shape.
 
 ### Approved heading fonts by tier
 
