@@ -607,15 +607,12 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
   font-variation-settings: 'opsz' 48;
 }
 
-/* ----- Axis 3: Italic placement (§2 + §10) -----
-   Placement is primarily an HTML authoring concern — where <em> and any
-   structural <br> are authored per §10. The modifier classes below are
-   self-documenting markers; CSS behavior is consistent across all three
-   per §2 ("em inherits color"). Reserved for future per-placement rules
-   if empirical build data surfaces a need. */
-.section-opener--italic-inline  .section-opener__headline em { /* inline flow */ }
-.section-opener--italic-newline .section-opener__headline em { /* preceded by structural <br> */ }
-.section-opener--italic-none    .section-opener__headline em { /* no <em> present */ }
+/* Marker modifiers — intentionally empty. Italic placement is HTML-authored
+   per typography.md §10 (structural HTML contracts). These classes exist for
+   generation-time selection and self-documentation. Do not add declarations. */
+.section-opener--italic-inline,
+.section-opener--italic-newline,
+.section-opener--italic-none { /* no-op */ }
 
 /* ----- Axis 4: Orientation ----- */
 
