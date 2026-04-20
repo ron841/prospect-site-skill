@@ -576,10 +576,16 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
   font-weight: 300;
 }
 
-/* ----- Axis 1: Eyebrow size (§3 mono tier) ----- */
-
-.section-opener--eyebrow-11 .section-opener__eyebrow { font-size: 11px; }
-.section-opener--eyebrow-10 .section-opener__eyebrow { font-size: 10px; }
+/* ----- Axis 1: Eyebrow size (§3 mono tier) -----
+   Gated by orientation per typography.md §4 Axis applicability: applies
+   only when orientation=eyebrow-above. The tag-strip-inline orientation
+   carries its mono register on the tag-strip component itself, not on
+   this axis. Phase 5 generation MUST reject eyebrow-size modifiers on
+   tag-strip-inline containers rather than silently emit them. CSS-level
+   gating via compound selector below is defense in depth; the
+   generation-time contract is the primary enforcement. */
+.section-opener--orientation-eyebrow-above.section-opener--eyebrow-11 .section-opener__eyebrow { font-size: 11px; }
+.section-opener--orientation-eyebrow-above.section-opener--eyebrow-10 .section-opener__eyebrow { font-size: 10px; }
 
 /* ----- Axis 2: Headline scale tier (§1 display ladder + ceiling rule) ----- */
 
@@ -678,10 +684,8 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
 
 /* ----- Mobile breakpoints (typography.md §7) -----
    §7 authors 980 tablet and 540 phone. Primitive layout transitions land
-   at those breakpoints. Note: css-framework.md's existing token-override
-   block at 899 (Mobile breakpoint overrides) predates §7; the two
-   breakpoint systems coexist until a follow-on commit reconciles them.
-   See "authorial ambiguity" note in Wave 2 commit report. */
+   at those breakpoints. Mobile-max (980) and desktop-min (981) reconciled
+   across css-framework.md per typography.md §7 (commits 83d088a, bef19f2). */
 
 @media (max-width: 980px) {
   .section-opener--headline-section .section-opener__headline {
@@ -721,7 +725,7 @@ Markup contract for tag-strip orientation:
 
 ```html
 <!-- voice-map: closing-table -->
-<section class="section-opener section-opener--eyebrow-10 section-opener--headline-featured section-opener--italic-none section-opener--orientation-tag-strip">
+<section class="section-opener section-opener--headline-featured section-opener--italic-none section-opener--orientation-tag-strip">
   <div class="section-opener__tag-strip">
     <span class="section-opener__tag-strip-label">Signature build · 01</span>
     <span class="section-opener__tag-strip-label section-opener__tag-strip-label--mute">Custom pool construction</span>
@@ -761,9 +765,9 @@ The four F5 instances map onto the four-axis parameterization as follows. Docume
 | services-header   | 11px    | section  | inline    | eyebrow-above  | closing-table  |
 | reviews-header    | 10px    | section  | newline   | eyebrow-above  | closing-table  |
 | equine-opener     | 10px    | equine   | newline   | eyebrow-above  | front-porch    |
-| signature         | 10px    | featured | none      | tag-strip      | closing-table  |
+| signature         | n/a     | featured | none      | tag-strip      | closing-table  |
 
-The `signature` eyebrow size (10px) refers to the tag-strip mono labels, not a conventional eyebrow — per the typography.md §4 TagStrip subsection, tag-strip is an orientation variant where the "eyebrow role" is filled by the split-flex mono row.
+The `signature` row marks eyebrow as `n/a` per typography.md §4 Axis applicability: tag-strip-inline orientation has no separate eyebrow element. The mono register that would otherwise be an eyebrow is carried by the tag-strip component itself — its font-size is a property of the tag-strip CSS rules, not this axis. Phase 5 generation MUST reject the eyebrow-size + tag-strip-inline combination rather than silently emit a no-op modifier.
 
 ### Phase 5 generation note
 
