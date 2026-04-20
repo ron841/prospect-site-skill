@@ -485,6 +485,303 @@ Section-specific hardcoded font sizes in `section-patterns.md` and `hero-pattern
 
 ---
 
+## SectionOpener primitive
+
+A skill-level typographic primitive that collapses four shipped F5 section-opener variants (services header, reviews header, equine band, signature) into one named pattern parameterized on four axes. Consolidation source: typography.md §4. Naming convention source: typography.md §0. Registered as part of the v0.8 Wave 2 primitive rollout.
+
+The primitive replaces instance-level CSS blocks for each F5 variant — Phase 5 emits one role-named container with the axis-modifier classes that select the instance, rather than authoring `.services-header`, `.reviews-head`, `.equine-eyebrow + .equine-headline`, and `.signature-tag + .signature-headline` as four separate primitives.
+
+### Role, alias, override — naming contract
+
+Per typography.md §0, every primitive in this skill is named in three layers:
+
+1. **Role name** — `section-opener`. Skill-level, stable across brands, never changes. The CSS class in the generated HTML.
+2. **Semantic alias** — `services-header`, `reviews-header`, `equine-opener`, `signature-opener`. Per-section and readable. These can survive as additional classes alongside the role name for HTML readability — `class="section-opener ... services-header"` — but the role name is the load-bearing selector.
+3. **Instance override** — per-build class modifiers, scoped CSS custom properties, or utility classes that tweak one specific instance without polluting the role name. Not authored at the primitive level; authored by Phase 5 when needed.
+
+Implementations MUST use the role name. Aliases are optional and decorative. Overrides are additive; they never replace role-layer rules.
+
+### Four parameters
+
+Per typography.md §4. Each axis has a fixed enumeration of values. Phase 5 selects one value per axis when emitting an instance.
+
+1. **Eyebrow size** (per typography.md §3 mono tier):
+   - `10px` — quieter mono register for reviews, equine, tag-strip
+   - `11px` — section-opener loud mono register for services
+
+2. **Headline scale tier** (per typography.md §1 display ladder + ceiling rule):
+   - `section` — `clamp(44px, 5vw, 56px)`, secondary display (5vw coefficient), used by services + reviews
+   - `equine` — `min(144px, max(56px, 7vw))`, primary display (7vw coefficient), tier-3 Distinctive showcase. Ceiling 144 is rule-compliant per §1 (1920 × 7vw = 134.4 minimum); supersedes F5's pre-rule 128 per the 2026-04-20 scope-doc changelog.
+   - `featured` — `clamp(38px, 4vw, 48px)`, tertiary display (4vw coefficient), tier-1 Signature ladder-capped
+
+3. **Italic placement** (per typography.md §2 + §10):
+   - `inline` — `<em>` inline inside headline flow
+   - `newline` — `<em>` preceded by a structural `<br>` per typography.md §10
+   - `none` — no `<em>` in this headline
+
+4. **Orientation** (per typography.md §4):
+   - `eyebrow-above` — mono eyebrow above display headline (services, reviews, equine)
+   - `tag-strip` — split-flex mono row atop a bordered content block, headline lives inside the content block (signature + operational, per §4 TagStrip subsection)
+
+Phase 5 never invents new axis values. If a new instance needs a value outside the enumeration above, the enumeration is extended in typography.md first; the primitive follows.
+
+### CSS implementation
+
+The CSS below gets written into `style.css` during Phase 5 whenever a build includes at least one section-opener instance. If a build contains zero instances, skip the block to keep output lean.
+
+```css
+/* =====================================================================
+   SectionOpener primitive (typography.md §4)
+
+   Four axes: eyebrow size | headline scale tier | italic placement |
+   orientation. Em-on-dark exception per typography.md §2 + Appendix A
+   is scoped to the .section-opener--on-dark modifier. Stylistic-set
+   signature (ss01 + ss02) applied at the role-base per §8; inherits
+   to display descendants. text-wrap: balance applied to the headline
+   per §10.
+   ===================================================================== */
+
+/* Role base */
+.section-opener {
+  font-feature-settings: "ss01" 1, "ss02" 1;
+}
+
+/* ----- Elements ----- */
+
+.section-opener__eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--color-primary);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.45;
+  margin: 0 0 14px 0;
+}
+
+.section-opener__headline {
+  font-family: var(--font-heading);
+  color: var(--color-dark-primary);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-weight: 400;
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* em inherits headline color by default (typography.md §2 rule codified).
+   Weight 300 per §2 — the italic is the shape move; color shift would be
+   a second, redundant move. Em-on-dark exception handled below. */
+.section-opener__headline em {
+  color: inherit;
+  font-style: italic;
+  font-weight: 300;
+}
+
+/* ----- Axis 1: Eyebrow size (§3 mono tier) ----- */
+
+.section-opener--eyebrow-11 .section-opener__eyebrow { font-size: 11px; }
+.section-opener--eyebrow-10 .section-opener__eyebrow { font-size: 10px; }
+
+/* ----- Axis 2: Headline scale tier (§1 display ladder + ceiling rule) ----- */
+
+/* Section scale — services, reviews. Secondary display, 5vw coefficient,
+   ladder-capped at 56. Ladder-cap is intentional: section-openers are not
+   required to scale past their ladder peak. */
+.section-opener--headline-section .section-opener__headline {
+  font-size: clamp(44px, 5vw, 56px);
+  font-variation-settings: 'opsz' 56;
+}
+
+/* Equine scale — tier-3 Distinctive showcase. Primary display, 7vw.
+   Ceiling 144: 1920 × 7vw = 134.4 minimum per §1; 144 sits rule-compliant
+   and below hero's 148 ceiling for tier-3 < tier-1-primary hierarchy.
+   Supersedes F5's pre-rule 128 per 2026-04-20 scope-doc changelog. */
+.section-opener--headline-equine .section-opener__headline {
+  font-size: min(144px, max(56px, 7vw));
+  font-variation-settings: 'opsz' 88;
+}
+
+/* Featured scale — tier-1 Signature. Tertiary display, 4vw, ladder-cap 48.
+   Ladder-cap intentional per tier-1 Closing-Table-companion intent. */
+.section-opener--headline-featured .section-opener__headline {
+  font-size: clamp(38px, 4vw, 48px);
+  font-variation-settings: 'opsz' 48;
+}
+
+/* ----- Axis 3: Italic placement (§2 + §10) -----
+   Placement is primarily an HTML authoring concern — where <em> and any
+   structural <br> are authored per §10. The modifier classes below are
+   self-documenting markers; CSS behavior is consistent across all three
+   per §2 ("em inherits color"). Reserved for future per-placement rules
+   if empirical build data surfaces a need. */
+.section-opener--italic-inline  .section-opener__headline em { /* inline flow */ }
+.section-opener--italic-newline .section-opener__headline em { /* preceded by structural <br> */ }
+.section-opener--italic-none    .section-opener__headline em { /* no <em> present */ }
+
+/* ----- Axis 4: Orientation ----- */
+
+/* Orientation 4a: eyebrow-above — mono eyebrow sibling to headline.
+   Services, reviews, equine. */
+.section-opener--orientation-eyebrow-above {
+  display: block;
+}
+
+/* Orientation 4b: tag-strip — split-flex mono row atop a bordered
+   content block. Signature, operational. The tag-strip itself lives
+   at the top of the container; the headline lives inside the content
+   block below (authored by the block-level primitive in Wave 3).
+   Per typography.md §4 TagStrip subsection. */
+.section-opener--orientation-tag-strip {
+  display: block;
+}
+
+.section-opener__tag-strip {
+  padding: 14px 36px;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  line-height: 1.45;
+}
+
+.section-opener__tag-strip-label {
+  /* Default label — left side, loud mono register (--color-primary). */
+}
+
+.section-opener__tag-strip-label--mute {
+  /* Right-side muted label — quiet mono register (§3). */
+  color: var(--color-text-muted);
+}
+
+/* ----- Em-on-dark exception (typography.md §2 + Appendix A) -----
+   Bounded context: italic runs on navy/dark backgrounds where inherited
+   color produces insufficient contrast. Two canonical locations per §2:
+   Equine band (tier-3 Distinctive) and Front Porch footer. Front Porch
+   footer is not a SectionOpener; Equine is. Scoped via explicit modifier
+   .section-opener--on-dark rather than by parent context to keep the
+   exception legible and bounded. */
+
+.section-opener--on-dark .section-opener__headline {
+  color: var(--color-white);
+}
+
+.section-opener--on-dark .section-opener__headline em {
+  color: var(--color-accent);
+}
+
+.section-opener--on-dark .section-opener__eyebrow {
+  color: var(--color-accent);
+}
+
+/* ----- Mobile breakpoints (typography.md §7) -----
+   §7 authors 980 tablet and 540 phone. Primitive layout transitions land
+   at those breakpoints. Note: css-framework.md's existing token-override
+   block at 899 (Mobile breakpoint overrides) predates §7; the two
+   breakpoint systems coexist until a follow-on commit reconciles them.
+   See "authorial ambiguity" note in Wave 2 commit report. */
+
+@media (max-width: 980px) {
+  .section-opener--headline-section .section-opener__headline {
+    font-size: clamp(32px, 5vw, 44px);
+  }
+  .section-opener--headline-equine .section-opener__headline {
+    font-size: clamp(44px, 9vw, 64px);
+    font-variation-settings: 'opsz' 56;
+  }
+  .section-opener--headline-featured .section-opener__headline {
+    font-size: clamp(32px, 4vw, 40px);
+  }
+  .section-opener__tag-strip {
+    padding: 12px 24px;
+  }
+}
+
+@media (max-width: 540px) {
+  .section-opener--headline-section .section-opener__headline {
+    font-size: 36px;
+  }
+  .section-opener--headline-equine .section-opener__headline {
+    font-size: 56px;
+    font-variation-settings: 'opsz' 56;
+  }
+  .section-opener--headline-featured .section-opener__headline {
+    font-size: 32px;
+  }
+}
+```
+
+### TagStrip orientation variant — markup contract
+
+The tag-strip orientation has a specific markup shape. Per typography.md §4, the tag-strip sits atop a bordered content block that contains the headline inside — not above the strip. The block-level container (signature-body, operational-grid, etc.) is a Wave 3 composition primitive; this section specifies only the tag-strip itself.
+
+Markup contract for tag-strip orientation:
+
+```html
+<!-- voice-map: closing-table -->
+<section class="section-opener section-opener--eyebrow-10 section-opener--headline-featured section-opener--italic-none section-opener--orientation-tag-strip">
+  <div class="section-opener__tag-strip">
+    <span class="section-opener__tag-strip-label">Signature build · 01</span>
+    <span class="section-opener__tag-strip-label section-opener__tag-strip-label--mute">Custom pool construction</span>
+  </div>
+  <!-- Headline renders inside the Wave 3 block-level composition below -->
+  <!-- <div class="tier-block"> <h3 class="section-opener__headline">Full design-build, inspected and signed.</h3> ... </div> -->
+</section>
+```
+
+The tag-strip is full-bleed across the top of the bordered block; the left label carries the section number in the loud mono register (`--color-primary`), the right label carries the section name in the quiet mono register (`--color-text-muted`). Per typography.md §4: "When in doubt about how to frame a content block, reach for the tag strip."
+
+### Voice-map HTML comment requirement
+
+Per voiceMap.md §8 and the 2026-04-20 scope-doc changelog entry pinning the syntax, every generated section-opener instance MUST be preceded by a voice-map HTML comment:
+
+```html
+<!-- voice-map: [register] -->
+<section class="section-opener ...">
+  ...
+</section>
+```
+
+Values: `closing-table` | `saturday-morning` | `front-porch` | `voice-pivot`. Kebab-case, verbatim from voiceMap §2. One comment per section, emitted at the top of every primitive container.
+
+The comment is mandatory at generation time. Phase 5 MUST emit it when rendering any section-opener instance. The comment is the machine-legible register marker that sets up v0.8.1 register-aware copy generation without locking in the architecture now. In v0.8, copy generation remains register-agnostic per the 2026-04-20 Path A decision; the comment reserves the signal.
+
+Phase 5 enforcement (grep verification that every `.section-opener` container is preceded by a `<!-- voice-map: -->` comment) is a Wave 4 gate concern, not a commit-time rule. This primitive spec defines the contract; the gate enforces it.
+
+### F5 instances as canonical examples
+
+Per typography.md §4's "F5 instances (canonical examples)" subsection: "These are reference implementations, not skill-level enumerations — future brands may produce different instance counts from the same parameter grid."
+
+The four F5 instances map onto the four-axis parameterization as follows. Documentation only — the primitive replaces these instance-level CSS blocks, not duplicates them.
+
+| F5 semantic alias | eyebrow | headline | italic    | orientation    | voice-map      |
+|-------------------|---------|----------|-----------|----------------|----------------|
+| services-header   | 11px    | section  | inline    | eyebrow-above  | closing-table  |
+| reviews-header    | 10px    | section  | newline   | eyebrow-above  | closing-table  |
+| equine-opener     | 10px    | equine   | newline   | eyebrow-above  | front-porch    |
+| signature         | 10px    | featured | none      | tag-strip      | closing-table  |
+
+The `signature` eyebrow size (10px) refers to the tag-strip mono labels, not a conventional eyebrow — per the typography.md §4 TagStrip subsection, tag-strip is an orientation variant where the "eyebrow role" is filled by the split-flex mono row.
+
+### Phase 5 generation note
+
+When Phase 5 emits a section-opener instance, it selects parameter values based on section purpose. For three-tier service composition (voiceMap.md §2d), the tier determines orientation and register:
+
+- **Signature tier** → `--orientation-tag-strip`, voice-map `closing-table`
+- **Operational tier** → `--orientation-tag-strip`, voice-map `saturday-morning`
+- **Distinctive tier** → `--orientation-eyebrow-above`, voice-map `front-porch` (if human-voice specialty) OR `saturday-morning` (if operational specialty), per voiceMap.md §2d decision tree
+
+For non-tier section openers (services header, reviews header, nav, promo callout, FAQ, contact), Phase 5 selects axes based on section role and per-section voice-map register declaration.
+
+Register-aware parameter selection happens at the container level per the 2026-04-20 Path A decision — the primitive picks orientation and emits the voice-map comment, but copy inside the container remains register-agnostic in v0.8. Register-aware copy generation is v0.8.1 scope; the voice-map comments this primitive emits are the signal that enables it.
+
+---
+
 ## Breakpoint system
 
 v0.7 uses a two-breakpoint mobile-first system:
