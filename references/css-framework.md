@@ -122,7 +122,7 @@ Almost certainly never needs changing. Listed here so if it ever does need chang
 ### Breakpoint
 
 ```
-CONFIG.mobileBreakpoint = "899px"  // @media (max-width: 899px) for mobile overrides
+CONFIG.mobileBreakpoint = "980px"  // @media (max-width: 980px) for mobile overrides, per typography.md §7
 ```
 
 Single breakpoint for v0.7. Do not add a tablet breakpoint without updating every section pattern file at the same time.
@@ -255,7 +255,7 @@ Every design token lives as a CSS custom property on `:root`. Section CSS and he
 }
 
 /* Mobile breakpoint overrides */
-@media (max-width: 899px) {
+@media (max-width: 980px) {
   :root {
     --text-hero: 44px;
     --text-hero-default: 40px;
@@ -789,7 +789,7 @@ v0.7 uses a two-breakpoint mobile-first system:
 - **Mobile:** default styles, no media query needed
 - **Desktop:** `@media (min-width: 900px)` for any desktop-specific rule
 
-Or equivalently, the pattern used throughout the skill files is mobile overrides via `@media (max-width: 899px)` after desktop defaults. Both patterns produce the same result. Pick one and stick with it per file.
+Or equivalently, the pattern used throughout the skill files is mobile overrides via `@media (max-width: 980px)` after desktop defaults. Both patterns produce the same result. Pick one and stick with it per file.
 
 There is no separate tablet breakpoint in v0.7. The 900px break handles iPad portrait (768px → mobile layout) and iPad landscape (1024px → desktop layout) correctly for every section pattern. If a specific section needs tablet-specific treatment in a later version, add it there, not globally.
 
@@ -973,7 +973,7 @@ After the base `:root` block, Phase 5 appends tier-specific overrides. Only the 
   --space-section-generous: 160px;
 }
 
-@media (max-width: 899px) {
+@media (max-width: 980px) {
   :root.tier-premium {
     --text-hero: 48px;
     --text-hero-default: 42px;
@@ -1011,7 +1011,7 @@ Professional is the default baseline — most tokens are already correct for Pro
   --space-section-generous: 120px;
 }
 
-@media (max-width: 899px) {
+@media (max-width: 980px) {
   :root.tier-standard {
     --text-hero: 38px;
     --text-hero-default: 34px;
