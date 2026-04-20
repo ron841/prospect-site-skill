@@ -171,6 +171,7 @@ Every design token lives as a CSS custom property on `:root`. Section CSS and he
   /* ===== Typography ===== */
   --font-heading: "Inter", system-ui, -apple-system, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Type scale (desktop) */
   --text-hero: 72px;               /* Hero headline, wide variant */
@@ -549,7 +550,7 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
 /* ----- Elements ----- */
 
 .section-opener__eyebrow {
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   color: var(--color-primary);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -642,7 +643,7 @@ The CSS below gets written into `style.css` during Phase 5 whenever a build incl
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
