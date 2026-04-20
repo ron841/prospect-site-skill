@@ -784,6 +784,228 @@ Register-aware parameter selection happens at the container level per the 2026-0
 
 ---
 
+## StatRow primitive
+
+A skill-level typographic primitive that renders a contrast pair of display numerals + mono labels — §5's "the contrast isn't decoration, it's the whole content of the stat row." Consolidation source: typography.md §5. Register ownership: voiceMap.md §2a (Closing Table). Registered as part of the v0.8 Wave 2 primitive rollout alongside SectionOpener.
+
+F5's `.hero-stats` + `.hero-stat-num` + `.hero-stat-label` trio is the canonical reference implementation. The primitive replaces that instance-level pattern with one role-named container and one numeral-scale axis.
+
+### Role, alias, override — naming contract
+
+Per typography.md §0, StatRow follows the role/alias/override layering established for SectionOpener:
+
+1. **Role name** — `statrow`. Skill-level, stable across brands, the load-bearing selector.
+2. **Semantic alias** — `hero-stats`, `service-stats`, etc. Per-section and readable. May survive as additional classes for HTML readability.
+3. **Instance override** — per-build class modifiers or scoped custom property overrides. Not authored at the primitive level.
+
+### Parameters
+
+Per typography.md §5, StatRow is parameterized on one axis at the skill level:
+
+- **Numeral scale** — `48` (canonical per §5), `40` (midrange), `36` (minimum per §5's 4× ratio rule against the 9px label floor)
+
+Non-parameters (authorial fixed values):
+
+- **Label scale** — fixed at 9px per §5's "label is already at legibility floor." Not a modifier.
+- **Column count** — hardcoded at 3-col desktop, 2-col tablet, 1-col phone per scope doc Core #5. §5 uses 3-col as the canonical example; no authorial evidence of alternate column counts in §5 or F5. Future extension requires authorial promotion in typography.md before a `--cols-N` axis is added here.
+- **Register** — Closing Table per voiceMap.md §2a. StatRow always carries the Closing Table typographic signature; register is not parametrized.
+
+### CSS implementation
+
+The CSS below gets written into `style.css` during Phase 5 whenever a build includes at least one StatRow instance. Skip the block if a build contains zero instances.
+
+```css
+/* =====================================================================
+   StatRow primitive (typography.md §5)
+
+   Display numerals + mono labels in a contrast pair. 4× ratio rule
+   enforced at CSS comment level and at generation-time contract
+   (numeral scale must be ≥4× label scale; label fixed at 9px).
+   Numeral weight 400 default per §5 — bold numerals at display scale
+   feel like pricing tables, not editorial. Stylistic-set signature
+   (ss01 + ss02) and opsz pinning inherited from typography.md §8 +
+   Appendix B (universal across tiers per 6ec0f6d).
+   ===================================================================== */
+
+/* Role base — Closing Table register owned (voiceMap.md §2a).
+   3-col desktop grid; responsive collapse defined below.
+   Hairline top-border echoes the meta-grid rhythm per §5. */
+.statrow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-border);
+  font-feature-settings: "ss01" 1, "ss02" 1;
+}
+
+/* ----- Elements ----- */
+
+.statrow__item {
+  padding: 0 24px;
+  border-left: 1px solid var(--color-border);
+}
+
+.statrow__item:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.statrow__num {
+  font-family: var(--font-heading);
+  font-weight: 400;                       /* §5: numeral weight 400 or lighter */
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-dark-primary);
+  margin: 0;
+}
+
+.statrow__label {
+  font-family: var(--font-mono);
+  font-size: 9px;                         /* §5: fixed at legibility floor */
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);         /* §5: quiet mono register */
+  line-height: 1.45;
+  margin-top: 10px;
+}
+
+/* ----- Axis 1: Numeral scale (§5 4× ratio rule) -----
+   §5 requires numeral scale ≥4× label scale. Label is fixed at 9px.
+   Minimum valid numeral is 36px (4× 9px = 36). Modifiers below all
+   satisfy the ratio: 48/9=5.33×, 40/9=4.44×, 36/9=4.00×. Phase 5
+   generation MUST reject any StatRow that would violate the ratio
+   (e.g., a custom scale <36px against the 9px label). opsz is pinned
+   per rendered size per §8. */
+
+.statrow--numeral-48 .statrow__num {
+  font-size: 48px;
+  font-variation-settings: 'opsz' 48;
+}
+
+.statrow--numeral-40 .statrow__num {
+  font-size: 40px;
+  font-variation-settings: 'opsz' 40;
+}
+
+.statrow--numeral-36 .statrow__num {
+  font-size: 36px;                        /* minimum per 4× rule */
+  font-variation-settings: 'opsz' 36;
+}
+
+/* ----- Mobile breakpoints (typography.md §7: 980 tablet, 540 phone) -----
+   Tablet (≤980px): 3-col → 2-col grid. Divider logic adapts for
+   2-col wrapping via :nth-child(odd) to reset border-left on
+   column-1 items regardless of DOM position.
+   Phone (≤540px): 2-col → 1-col stack. Vertical dividers become
+   horizontal between stacked items. Numeral drops to 36px per §5's
+   mobile range (36–42px) regardless of desktop modifier; label stays
+   at 9px per §5's "don't shrink the label to maintain proportion."
+
+   Mobile numeral rule placed after modifier rules for source-order
+   precedence at matching specificity (.statrow .statrow__num equals
+   .statrow--numeral-N .statrow__num). Do not reorder. */
+
+@media (max-width: 980px) {
+  .statrow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .statrow__item:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .statrow {
+    grid-template-columns: 1fr;
+  }
+  .statrow__item,
+  .statrow__item:nth-child(odd) {
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+    padding: 12px 0;
+  }
+  .statrow__item:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .statrow .statrow__num {
+    font-size: 36px;
+    font-variation-settings: 'opsz' 36;
+  }
+}
+```
+
+### 4× ratio rule — enforcement layers
+
+Per typography.md §5: "Numeral scale must be ≥4× the label scale. At 48px / 9px, that's 5.3×. At 32px / 10px, 3.2× — not enough; the tier collapses."
+
+The rule is a contract between numeral scale and label scale. CSS cannot programmatically enforce a cross-class ratio, so enforcement is layered:
+
+1. **CSS level (defense in depth):** Modifier values authored in this primitive all satisfy 4× against the 9px label (48/9=5.33×, 40/9=4.44×, 36/9=4.00×).
+2. **Generation-time contract (primary):** Phase 5 MUST reject any StatRow instance that would violate the ratio. Custom numeral scales outside the authored modifiers require authorial extension in typography.md §5 before the CSS primitive accepts them.
+
+Same defense-in-depth pattern as SectionOpener's eyebrow-axis gating (816f58a): cascade-level enforcement where possible, generation-time contract primary.
+
+### Column-count behavior
+
+Hardcoded 3-col desktop → 2-col tablet (≤980px) → 1-col phone (≤540px). Per scope doc Core #5 and typography.md §7 breakpoint pair. Not parametrized.
+
+§5 authors the 3-col canonical pattern but does not enumerate alternate column counts. Adding a `--cols-N` modifier axis is deferred to future authorial extension. 4-col, 6-col, or other layouts would require authorial promotion in typography.md before the primitive accepts them.
+
+**F5 precedent divergence:** F5's `.hero-stats` keeps 3-col from 541px through 980px (no 2-col tablet stage). This primitive follows scope doc Core #5's 3/2/1 spec rather than F5 precedent — scope doc authority over F5 instance precedent. Flagged for Wave 2 close.
+
+### F5 instance as canonical example
+
+Per typography.md §4's "F5 instances (canonical examples)" caveat (applies to all primitives): these are reference implementations, not skill-level enumerations. Future brands may produce different instance counts from the same parameter grid.
+
+| F5 semantic alias | numeral scale | column count | voice-map     |
+|-------------------|---------------|--------------|---------------|
+| hero-stats        | numeral-48    | 3-col        | closing-table |
+
+F5 ships one StatRow instance (the hero stat row). Additional instances (service-tier stats, inline-band stats) are Wave 3 composition scope, not current F5 state.
+
+### Voice-map HTML comment requirement
+
+Per voiceMap.md §8 and voiceMap.md §2a (Closing Table register owns StatRow), every generated StatRow instance MUST be preceded by a voice-map HTML comment. Voice-map value is always `closing-table` for StatRow — StatRow is a canonical Closing Table instance per §2a, not register-parametrized.
+
+Markup contract:
+
+```html
+<!-- voice-map: closing-table -->
+<section class="statrow statrow--numeral-48">
+  <div class="statrow__item">
+    <div class="statrow__num">36</div>
+    <div class="statrow__label">Label 1</div>
+  </div>
+  <div class="statrow__item">
+    <div class="statrow__num">4.2</div>
+    <div class="statrow__label">Label 2</div>
+  </div>
+  <div class="statrow__item">
+    <div class="statrow__num">2</div>
+    <div class="statrow__label">Label 3</div>
+  </div>
+</section>
+```
+
+The comment is mandatory at generation time. Phase 5 MUST emit it when rendering any StatRow instance. Phase 5 enforcement (grep verification that every `.statrow` container is preceded by a `<!-- voice-map: closing-table -->` comment) is a Wave 4 gate concern, not a commit-time rule.
+
+### Phase 5 generation note
+
+When Phase 5 emits a StatRow instance, it selects the numeral-scale modifier based on section context. The hero stat row uses `--numeral-48` per F5 precedent. Non-hero stat rows (service tier summaries, inline stat bands — Wave 3 composition scope) use `--numeral-40` or `--numeral-36` depending on section density.
+
+Generation constraints Phase 5 MUST enforce:
+
+1. **4× ratio rule (§5):** reject any StatRow whose numeral-scale modifier would resolve to a value <36px against the fixed 9px label. Current modifiers (48, 40, 36) all satisfy; custom scales outside this set require authorial extension.
+2. **Column-count + content:** at desktop 3-col, a StatRow with fewer than 3 stats produces empty columns. Generation should author exactly 3 stats per row until a future `--cols-N` axis lands.
+3. **Register invariance:** voice-map comment is always `closing-table`. StatRow is not a register-parametrized primitive.
+
+Register-aware copy generation remains v0.8.1 scope per the 2026-04-20 Path A decision; the voice-map comment reserves the signal.
+
+---
+
 ## Breakpoint system
 
 v0.7 uses a two-breakpoint mobile-first system:
